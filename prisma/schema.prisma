@@ -215,7 +215,7 @@ model version_piece {
   nom_piece String? @db.VarChar(255)
 }
 
-model CalendarEvent {
+model Calendarevent {
   id        Int       @id @default(autoincrement())
   title     String
   startDate DateTime
@@ -227,21 +227,21 @@ model CalendarEvent {
 }
 
 // update gestion pieces on ajoutant produit semi finis achetés et produit finis
-model SemiFiniAchete {
+model semifiniachete {
   id        Int      @id @default(autoincrement())
   nom       String   @unique // conseillé si tu utilises le nom comme "clé"
   quantite  Int      @default(0)
   createdAt DateTime @default(now())
 }
 
-model ProduitFini {
+model produitfini {
   id         Int                    @id @default(autoincrement())
   nom        String
-  references ProduitFiniReference[]
+  references produitfinireference[]
   createdAt  DateTime               @default(now())
 }
 
-model ProduitFiniReference {
+model produitfinireference {
   id            Int @id @default(autoincrement())
   produitFiniId Int
 
@@ -253,7 +253,7 @@ model ProduitFiniReference {
   quantite        Int
   tracerNumeroLot Boolean @default(false)
 
-  produitFini ProduitFini @relation(fields: [produitFiniId], references: [id])
+  produitFini produitfini @relation(fields: [produitFiniId], references: [id])
 
   @@index([produitFiniId])
 }

@@ -30,7 +30,7 @@ const PORT = process.env.PORT || 3000;
 
 const allowedOrigins: string[] = [
   'http://localhost:5173',
-  'https://frogbox-v2-fd8e.vercel.app',
+  'https://frogbox-v2-5ugvb5gip-ouahidbouananis-projects.vercel.app',
   'https://frogbox-v2.vercel.app'
 ];
 
