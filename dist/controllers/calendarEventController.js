@@ -17,7 +17,7 @@ const formatEventForClient = (e) => ({
 });
 const getEvents = async (req, res) => {
     try {
-        const events = await prisma_1.default.calendarEvent.findMany({
+        const events = await prisma_1.default.calendarevent.findMany({
             orderBy: { startDate: 'asc' },
         });
         res.json(events.map(formatEventForClient));
@@ -32,7 +32,7 @@ const createEvent = async (req, res) => {
     try {
         const { title, start, end, extendedProps } = req.body;
         const color = extendedProps?.calendar || 'Primary';
-        const event = await prisma_1.default.calendarEvent.create({
+        const event = await prisma_1.default.calendarevent.create({
             data: {
                 title,
                 // start et end sont envoyés en "YYYY-MM-DD" → new Date() OK
@@ -54,7 +54,7 @@ const updateEvent = async (req, res) => {
         const id = Number(req.params.id);
         const { title, start, end, extendedProps } = req.body;
         const color = extendedProps?.calendar || 'Primary';
-        const event = await prisma_1.default.calendarEvent.update({
+        const event = await prisma_1.default.calendarevent.update({
             where: { id },
             data: {
                 title,
@@ -74,7 +74,7 @@ exports.updateEvent = updateEvent;
 const deleteEvent = async (req, res) => {
     try {
         const id = Number(req.params.id);
-        await prisma_1.default.calendarEvent.delete({
+        await prisma_1.default.calendarevent.delete({
             where: { id },
         });
         res.status(204).send();

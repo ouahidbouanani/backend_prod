@@ -14,7 +14,7 @@ const create = async (req, res) => {
         await prisma_1.default.$transaction(async (tx) => {
             await tx.debut_tomo.create({
                 data: {
-                    id_lot: id_lot.toString(),
+                    id_lot: id_lot,
                     nb_pieces, etage,
                     date: new Date(date),
                     heure_debut: new Date(`1970-01-01T${heure_debut}`),
