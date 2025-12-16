@@ -230,7 +230,7 @@ model CalendarEvent {
 // update gestion pieces on ajoutant produit semi finis achetés et produit finis
 model SemiFiniAchete {
   id        Int      @id @default(autoincrement())
-  nom       String   @unique // conseillé si tu utilises le nom comme "clé"
+  nom       String   @unique
   quantite  Int      @default(0)
   createdAt DateTime @default(now())
   @@map("semifiniachete")
@@ -248,10 +248,8 @@ model ProduitFiniReference {
   id            Int @id @default(autoincrement())
   produitFiniId Int
 
-  // 'semi-finis' | 'semi-finis-achetes'
   type String
-
-  nom String
+  nom  String
 
   quantite        Int
   tracerNumeroLot Boolean @default(false)
@@ -259,4 +257,7 @@ model ProduitFiniReference {
   produitFini ProduitFini @relation(fields: [produitFiniId], references: [id])
 
   @@index([produitFiniId])
+
+  @@map("produitfinireference")  
 }
+
