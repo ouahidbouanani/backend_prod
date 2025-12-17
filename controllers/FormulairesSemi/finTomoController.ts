@@ -25,7 +25,7 @@ export const create = async (req: Request, res: Response): Promise<void> => {
             });
         });
 
-        res.status(201).json({ message: 'Fin de tomographie enregistrée et statut mis à jour' });
+        res.status(201).json({ message: '✅ Données enregistrées avec succès.' });
     } catch (err) {
         console.error('Erreur insertion fin_tomo :', err);
         res.status(500).json({ error: 'Erreur serveur lors de l\'insertion fin_tomo' });

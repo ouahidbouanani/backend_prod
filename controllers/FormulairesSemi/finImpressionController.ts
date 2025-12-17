@@ -25,7 +25,7 @@ export const dbInsertFinImpression = async (req, res) => {
             });
         });
 
-        res.status(200).json({ success: true, message: 'Toutes les données enregistrées avec succès' });
+        res.status(200).json({ success: true, message: '✅ Données enregistrées avec succès.' });
     } catch (err) {
         console.error('Erreur:', err);
         res.status(500).json({ success: false, message: 'Erreur serveur' });

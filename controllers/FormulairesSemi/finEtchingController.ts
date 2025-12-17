@@ -98,7 +98,7 @@ export const addFinEtching = async (req: Request, res: Response): Promise<void> 
 
         });
 
-        res.status(200).json({ message: 'Fin Etching enregistrée et statut mis à jour' });
+        res.status(200).json({ message: '✅ Données enregistrées avec succès.' });
     } catch (err) {
         console.error('Erreur ajout fin etching:', err);
         res.status(500).json({ error: 'Erreur serveur' });

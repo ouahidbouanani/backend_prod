@@ -28,7 +28,7 @@ export const create = async (req: Request, res: Response): Promise<void> => {
             });
         });
 
-        res.status(201).json({ message: 'Début de tomographie enregistré et statut mis à jour' });
+        res.status(201).json({ message: '✅ Données enregistrées avec succès.' });
     } catch (err) {
         console.error('Erreur d\'insertion :', err);
         res.status(500).json({ error: 'Erreur serveur lors de l\'enregistrement' });

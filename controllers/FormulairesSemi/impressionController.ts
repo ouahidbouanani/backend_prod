@@ -32,7 +32,9 @@ export const addImpression = async (req: Request, res: Response): Promise<void> 
             }
         });
 
-        res.status(200).json({ success: true, message: 'Données enregistrées et statut mis à jour' });
+        res.status(200).json({ success: true,
+            data: { id_lot },
+            message: '✅ Données enregistrées avec succès.' });
     } catch (err) {
         console.error('❌ Erreur lors de l\'insertion:', err);
         res.status(500).json({ success: false, message: 'Erreur dans la base de données' });

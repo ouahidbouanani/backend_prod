@@ -147,7 +147,7 @@ export const submitPieces = async (req: Request, res: Response): Promise<void> =
             });
         });
 
-        res.status(200).json({ success: true, message: 'Données et statut enregistrés avec succès' });
+        res.status(200).json({ success: true, message: '✅ Données enregistrées avec succès.' });
     } catch (err) {
         console.error('Erreur:', err);
         res.status(500).json({ error: err.message });
