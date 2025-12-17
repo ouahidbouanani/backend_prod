@@ -62,15 +62,10 @@ export const addDebutEtching = async (req: Request, res: Response): Promise<void
         }
       });
 
-      await tx.lot_status.upsert({
+      await tx.lot_status.update({
         where: { id_lot: numeroLot },
-        update: { current_step: 'debut_etching' },
-        create: {
-          id_lot: numeroLot,
-          current_step: 'debut_etching',
-          type_piece: '',
-          revision: ''
-        }
+        data: { current_step: 'prise_de_cotes' },
+        
       });
     });
 

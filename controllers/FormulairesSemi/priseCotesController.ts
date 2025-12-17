@@ -143,7 +143,7 @@ export const submitPieces = async (req: Request, res: Response): Promise<void> =
             // 3. Mettre à jour le statut
             await tx.lot_status.update({
                 where: { id_lot: id_lot },
-                data: { current_step: 'prise_de_cotes' }
+                data: { current_step: 'fin_etching' }
             });
         });
 

@@ -20,14 +20,15 @@ export const addImpression = async (req: Request, res: Response): Promise<void> 
 
         await prisma.lot_status.upsert({
             where: { id_lot: id_lot },
-            update: { current_step: 'nouvelle_impression' },
+            update: { current_step: 'fin_impression' },
             create: {
                 id_lot: id_lot,
                 nb_pieces: nbPieces,
-                current_step: 'nouvelle_impression',
+                current_step: 'fin_impression',
                 activity,
                 type_piece: typePieces,
-                revision: versionPiece
+                revision: versionPiece,
+                disponible_finis: false,
             }
         });
 

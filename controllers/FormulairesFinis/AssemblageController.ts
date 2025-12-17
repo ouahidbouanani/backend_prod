@@ -4,25 +4,29 @@ import { Request, Response } from 'express';
 // ============================================
 import prisma from '../../config/prisma';
 
-export const addAssemblage = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { activity, quantite, id_nozzle, id_body, date, operateur, commentaire } = req.body;
-        
-        const result = await prisma.assemblage.create({
-            data: {
-                activity,
-                quantite,
-                id_nozzle,
-                id_body,
-                date: new Date(date),
-                operateur,
-                commentaire
-            }
-        });
-        
-        res.status(200).json(result);
-    } catch (err) {
-        console.error('❌ Erreur lors de l\'insertion:', err);
-        res.status(500).json({ success: false, message: 'Erreur dans la base de données' });
+export const getAvailableLotsForReference = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const reference = req.query.reference;
+
+    if (!reference || typeof reference !== 'string') {
+      res.status(400).json({ error: 'Paramètre "reference" obligatoire' });
+      return;
     }
+
+    const lots = await prisma.lot_status.findMany({
+      where: {
+        type_piece: reference,            // ex: "N100"
+        current_step: 'pret_assemblage',
+        disponible_finis: true,
+      },
+      select: {
+        id_lot: true                 // tu peux enlever/ajouter d’autres champs
+      },
+    });
+
+    res.json(lots);
+  } catch (err) {
+    console.error('Erreur lors de la récupération des lots disponibles :', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 };

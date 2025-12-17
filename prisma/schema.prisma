@@ -128,13 +128,16 @@ model imprimantes {
 }
 
 model lot_status {
-  id_lot       Int       @id
-  nb_pieces    Int?
-  current_step String?   @db.VarChar(100)
-  updated_at   DateTime? @default(now()) @updatedAt @db.DateTime(0)
-  activity     String?   @db.VarChar(25)
-  type_piece   String    @db.VarChar(100)
-  revision     String    @db.VarChar(50)
+  id_lot          Int       @id
+  nb_pieces       Int?
+  current_step    String?   @db.VarChar(100)
+  updated_at      DateTime? @default(now()) @updatedAt @db.DateTime(0)
+  activity        String?   @db.VarChar(25)
+  type_piece      String    @db.VarChar(100)
+  revision        String    @db.VarChar(50)
+  disponible_finis Boolean  @default(false)
+
+  @@index([type_piece, current_step, disponible_finis], name: "idx_lot_status_type_step_dispo")
 }
 
 model mesure_cote_piece {
@@ -248,8 +251,10 @@ model ProduitFiniReference {
   id            Int @id @default(autoincrement())
   produitFiniId Int
 
+  // 'semi-finis' | 'semi-finis-achetes'
   type String
-  nom  String
+
+  nom String
 
   quantite        Int
   tracerNumeroLot Boolean @default(false)
@@ -257,7 +262,5 @@ model ProduitFiniReference {
   produitFini ProduitFini @relation(fields: [produitFiniId], references: [id])
 
   @@index([produitFiniId])
-
-  @@map("produitfinireference")  
+  @@map("produitfinireference")
 }
-

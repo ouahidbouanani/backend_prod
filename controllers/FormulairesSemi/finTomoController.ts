@@ -19,10 +19,9 @@ export const create = async (req: Request, res: Response): Promise<void> => {
                 }
             });
 
-            await tx.lot_status.upsert({
+            await tx.lot_status.update({
                 where: { id_lot: id_lot },
-                update: { current_step: 'fin_tomo' },
-                create: { id_lot: id_lot, current_step: 'fin_tomo', type_piece: '', revision: '' }
+                data: { current_step: 'pret_assemblage', disponible_finis: true}
             });
         });
 

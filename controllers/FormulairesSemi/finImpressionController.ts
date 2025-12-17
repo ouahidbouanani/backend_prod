@@ -19,10 +19,9 @@ export const dbInsertFinImpression = async (req, res) => {
                 }
             });
 
-            await tx.lot_status.upsert({
+            await tx.lot_status.update({
                 where: { id_lot: id_lot },
-                update: { current_step: 'fin_impression' },
-                create: { id_lot: id_lot, current_step: 'fin_impression', type_piece: '', revision: '' }
+                data: { current_step: 'debut_etching' },
             });
         });
 
@@ -71,4 +70,3 @@ export const getLotDetails = async (req, res) => {
         res.status(500).json({ error: 'Erreur serveur' });
     }
 };
-
