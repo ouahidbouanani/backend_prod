@@ -7,14 +7,14 @@ import prisma from '../../config/prisma';
 export const dbInsertFinImpression = async (req, res) => {
     try {
         const {
-            id_lot, num_lot_wafer, nb_lancees, nb_imprimees,
+            id_lot, num_lot_wafer,type_pieces, nb_lancees, nb_imprimees,
             operateur, date_fin, commentaires
         } = req.body;
 
         await prisma.$transaction(async (tx) => {
             await tx.fin_impression.create({
                 data: {
-                    id_lot, num_lot_wafer, nb_lancees, nb_imprimees,
+                    id_lot, num_lot_wafer, type_pieces, nb_lancees, nb_imprimees,
                     operateur, date_fin: new Date(date_fin), commentaires
                 }
             });

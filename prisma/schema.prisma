@@ -53,6 +53,7 @@ model debut_etching {
   id            Int       @id @default(autoincrement())
   id_lot        Int
   num_lot_wafer String?   @db.VarChar(50)
+  type_pieces   String?   @db.VarChar(50)
   nb_pieces     Int?
   operateur     String?   @db.VarChar(50)
   nb_passage    Int?
@@ -107,6 +108,7 @@ model fin_etching {
 model fin_impression {
   id_lot        Int       @id
   num_lot_wafer String?   @db.VarChar(50)
+  type_pieces    String?   @db.VarChar(50)
   nb_lancees    Int?
   nb_imprimees  Int?
   operateur     String?   @db.VarChar(100)

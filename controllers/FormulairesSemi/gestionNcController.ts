@@ -4,6 +4,26 @@ import { Request, Response } from 'express';
 // ============================================
 import prisma from '../../config/prisma';
 
+
+
+export const getLotsForNc = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const results = await prisma.nouvelle_impression.findMany({
+            select: {
+                id: true,
+            },
+        });
+
+        res.status(200).json(results);
+    } catch (err) {
+        console.error('❌ Erreur lors de la récupération des lots:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur dans la récupération des lots',
+        });
+    }
+};
+
 export const declarerNc = async (req: Request, res: Response): Promise<Response | void> => {
     try {
         const { id_lot, operateur, date, pieces } = req.body;

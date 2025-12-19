@@ -2,6 +2,9 @@ import express from 'express';
 const router = express.Router();
 import * as controller from '../../controllers/FormulairesSemi/gestionNcController';
 
+
+// Récuperer tous les lots 
+router.get('/nc/lots', controller.getLotsForNc);
 // POST - Déclarer une nouvelle NC
 router.post('/nc/add', controller.declarerNc);
 router.post('/nc/adds', controller.storeNcPieces);

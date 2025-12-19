@@ -24,7 +24,8 @@ export const getLots = async (req: Request, res: Response): Promise<void> => {
       select: {
         id_lot: true,
         num_lot_wafer: true,
-        nb_imprimees: true
+        nb_imprimees: true, 
+        type_pieces: true,
       }
     });
 
@@ -40,7 +41,7 @@ export const getLots = async (req: Request, res: Response): Promise<void> => {
 export const addDebutEtching = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
-      numeroLot, num_lot_wafer, nb_pieces, operateur, nb_passage,
+      numeroLot, num_lot_wafer, nb_pieces, type_pieces, operateur, nb_passage,
       date_debut, heure_debut, temps_reel, koh, bain, position, commentaire
     } = req.body;
 
@@ -48,6 +49,7 @@ export const addDebutEtching = async (req: Request, res: Response): Promise<void
       await tx.debut_etching.create({
         data: {
           id_lot: numeroLot,
+          type_pieces,
           num_lot_wafer,
           nb_pieces,
           operateur,
