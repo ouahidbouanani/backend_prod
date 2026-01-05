@@ -32,8 +32,8 @@ const allowedOrigins: string[] = [
   'http://localhost:5173',
   'https://frogbox-v2-5ugvb5gip-ouahidbouananis-projects.vercel.app',
   'https://frogbox-v2.vercel.app',
-  'http://frogbox-v2-61o1.vercel.app',
-  'http://frogbox-v2-61o1-em374tycc-ouahidbouananis-projects.vercel.app'
+  'https://frogbox-v2-61o1.vercel.app',
+  'https://frogbox-v2-61o1-em374tycc-ouahidbouananis-projects.vercel.app'
 ];
 
 const corsOptions: CorsOptions = {
