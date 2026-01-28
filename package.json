@@ -28,7 +28,9 @@
     "mysql2": "^3.14.0",
     "nodemailer": "^7.0.3",
     "passport": "^0.7.0",
-    "passport-azure-ad-oauth2": "^0.0.4"
+    "passport-azure-ad-oauth2": "^0.0.4",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

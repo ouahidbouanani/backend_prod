@@ -21,13 +21,12 @@ const create = async (req, res) => {
                     operateur, num_machine, version, separation, commentaire
                 }
             });
-            await tx.lot_status.upsert({
+            await tx.lot_status.update({
                 where: { id_lot },
-                update: { current_step: 'prise_de_cotes' },
-                create: { id_lot, current_step: 'prise_de_cotes', type_piece: '', revision: '' }
+                data: { current_step: 'fin_tomo' },
             });
         });
-        res.status(201).json({ message: 'Début de tomographie enregistré et statut mis à jour' });
+        res.status(201).json({ message: '✅ Données enregistrées avec succès.' });
     }
     catch (err) {
         console.error('Erreur d\'insertion :', err);
@@ -48,22 +47,41 @@ const getAll = async (req, res) => {
 exports.getAll = getAll;
 const getLots = async (req, res) => {
     try {
-        // 1. Récupérer les lots de debut_tomo (à exclure)
+        // 1. Récupérer les lots déjà présents dans debut_tomo 
         const lotsTomo = await prisma_1.default.debut_tomo.findMany({
-            select: { id_lot: true }
+            select: { id_lot: true },
         });
-        // Convertir en number[]
         const idsTomo = lotsTomo
             .map(l => Number(l.id_lot))
             .filter(n => !isNaN(n));
-        // 2. Récupérer les lots fin_etching qui ne sont pas dans debut_tomo
+        // 2. Récupérer les id_lot dans lot_status :
+        //    - disponible_finis = true
+        //    - type_piece ne commence PAS par "N" (pas des nozzles)
+        const lotsStatus = await prisma_1.default.lot_status.findMany({
+            where: {
+                disponible_finis: false,
+                NOT: {
+                    type_piece: {
+                        startsWith: 'N',
+                    },
+                },
+            },
+            select: { id_lot: true },
+        });
+        const idsFromStatus = lotsStatus
+            .map(l => Number(l.id_lot))
+            .filter(n => !isNaN(n));
+        // 3. Récupérer les lots fin_etching :
+        //    - id_lot pas dans debut_tomo
+        //    - id_lot présent dans les ids filtrés de lot_status
         const results = await prisma_1.default.fin_etching.findMany({
             where: {
                 id_lot: {
-                    notIn: idsTomo
-                }
+                    notIn: idsTomo,
+                    in: idsFromStatus,
+                },
             },
-            select: { id_lot: true }
+            select: { id_lot: true },
         });
         res.json(results);
     }

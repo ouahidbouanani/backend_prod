@@ -26,7 +26,8 @@ const getLots = async (req, res) => {
             select: {
                 id_lot: true,
                 num_lot_wafer: true,
-                nb_imprimees: true
+                nb_imprimees: true,
+                type_pieces: true,
             }
         });
         res.status(200).json(results);
@@ -39,11 +40,12 @@ const getLots = async (req, res) => {
 exports.getLots = getLots;
 const addDebutEtching = async (req, res) => {
     try {
-        const { numeroLot, num_lot_wafer, nb_pieces, operateur, nb_passage, date_debut, heure_debut, temps_reel, koh, bain, position, commentaire } = req.body;
+        const { numeroLot, num_lot_wafer, nb_pieces, type_pieces, operateur, nb_passage, date_debut, heure_debut, temps_reel, koh, bain, position, commentaire } = req.body;
         await prisma_1.default.$transaction(async (tx) => {
             await tx.debut_etching.create({
                 data: {
                     id_lot: numeroLot,
+                    type_pieces,
                     num_lot_wafer,
                     nb_pieces,
                     operateur,
@@ -57,18 +59,12 @@ const addDebutEtching = async (req, res) => {
                     commentaire
                 }
             });
-            await tx.lot_status.upsert({
+            await tx.lot_status.update({
                 where: { id_lot: numeroLot },
-                update: { current_step: 'debut_etching' },
-                create: {
-                    id_lot: numeroLot,
-                    current_step: 'debut_etching',
-                    type_piece: '',
-                    revision: ''
-                }
+                data: { current_step: 'prise_de_cotes' },
             });
         });
-        res.status(200).json({ success: true, message: 'Données et statut enregistrés avec succès' });
+        res.status(200).json({ success: true, message: '✅ Données enregistrées avec succès.' });
     }
     catch (err) {
         console.error("Erreur lors de l'insertion dans debut_etching:", err);

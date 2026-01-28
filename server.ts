@@ -2,7 +2,9 @@ import express, { Application } from 'express';
 import bodyParser from 'body-parser';
 import cors, { CorsOptions } from 'cors';
 import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
 import prisma from './config/prisma';
+import { createOpenApiSpec } from './config/swagger';
 
 import authRoutes from './routes/auth.Routes';
 import suiviRoutes from './routes/FormsSemiRoutes/suiviRoutes';
@@ -24,9 +26,19 @@ import versionPieceRoutes from './routes/versionPieceRoutes';
 import ncRoutes from './routes/FormsSemiRoutes/gestionNcRoutes';
 import calendarEventRoutes from './routes/calendarEventRoutes';
 import semiFinisAchetesRoutes from './routes/admin/semiFinisAchetesRoutes';
-import produitsFinisRoutes from './routes/admin/produitsFinisRoutes'
+import produitsFinisRoutes from './routes/admin/produitsFinisRoutes';
+import preAssemblageRoutes from "./routes/admin/preAssemblageRoutes";
+import debutpreAssemblageRoutes from "./routes/FromsFinisRoutes/DebutPreAssemblageRoutes";
+import finPreassemblageRoutes from "./routes/FromsFinisRoutes/FinPreAssemblageRoutes";
+import debutAssemblage from "./routes/FromsFinisRoutes/AssemeblageRoute";
+import debutAssemblageRoutes from "./routes/FromsFinisRoutes/DebutAssemblageRoutes";
+import finAssemblageRoutes from "./routes/FromsFinisRoutes/FinAssemblageRoutes";
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
+
+const swaggerSpec = createOpenApiSpec({
+  baseUrl: process.env.SWAGGER_BASE_URL || `http://localhost:${PORT}`,
+});
 
 const allowedOrigins: string[] = [
   'http://localhost:5173',
@@ -50,6 +62,12 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
+app.get('/api-docs.json', (req, res) => {
+  res.json(swaggerSpec);
+});
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
+
 app.use('/api/impression', impressionRoutes);
 app.use('/api/fin-impression', finImpressionRoutes);
 app.use('/api/debut-etching', debutEtchingRoutes);
@@ -69,14 +87,21 @@ app.use('/api/denominations', denominationRoutes);
 app.use('/api/config', systemConfigRoutes);
 app.use('/api/versions', versionPieceRoutes);
 app.use('/api', calendarEventRoutes);
-// Nouvelles routes
 app.use('/api/semi-finis-achetes', semiFinisAchetesRoutes);
 app.use('/api/produits-finis', produitsFinisRoutes);
+app.use("/api/semi-finis-pre-assemblage", preAssemblageRoutes);
+app.use("/api/debutpreassemblage", debutpreAssemblageRoutes);
+app.use("/api/finpreassemblage", finPreassemblageRoutes);
+app.use("/api/debut-assemblage", debutAssemblage);
+app.use("/api/debutassemblage", debutAssemblageRoutes);
+app.use("/api/finassemblage", finAssemblageRoutes);
 
 const server = app.listen(PORT, () => {
   console.log(`✅ Serveur démarré sur le port ${PORT}`);
   console.log(`🔗 http://localhost:${PORT}`);
+  console.log(`📚 Swagger UI: http://localhost:${PORT}/api-docs`);
 });
+
 
 const gracefulShutdown = async (signal: string) => {
   console.log(`\n🛑 ${signal} reçu, arrêt du serveur...`);

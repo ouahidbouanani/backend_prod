@@ -1,11 +1,44 @@
-import express from 'express';
+import express from "express";
+import { createDebutTomoFinis, getDebutTomoFinisById } from "../../controllers/FormulairesFinis/DebutTomoController";
+
 const router = express.Router();
-import * as debutTomoController from '../../controllers/FormulairesFinis/DebutTomoController';
 
+/**
+ * @openapi
+ * /api/debut-tomo-finis:
+ *   post:
+ *     tags: [Tomo]
+ *     summary: Créer un début tomographie (finis)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: true
+ *     responses:
+ *       200:
+ *         description: Créé
+ */
 
-// Enregistrer un début de tomographie
-router.post('/', debutTomoController.create);
+router.post("/", createDebutTomoFinis);
 
-router.get('/lots', debutTomoController.getLots);
+/**
+ * @openapi
+ * /api/debut-tomo-finis/{id}:
+ *   get:
+ *     tags: [Tomo]
+ *     summary: Détails début tomographie (finis)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Détails
+ */
+router.get("/:id", getDebutTomoFinisById);
 
 export default router;

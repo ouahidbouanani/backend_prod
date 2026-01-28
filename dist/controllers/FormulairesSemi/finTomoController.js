@@ -21,13 +21,12 @@ const create = async (req, res) => {
                     operateur
                 }
             });
-            await tx.lot_status.upsert({
+            await tx.lot_status.update({
                 where: { id_lot: id_lot },
-                update: { current_step: 'fin_tomo' },
-                create: { id_lot: id_lot, current_step: 'fin_tomo', type_piece: '', revision: '' }
+                data: { current_step: 'pret_assemblage', disponible_finis: true }
             });
         });
-        res.status(201).json({ message: 'Fin de tomographie enregistrée et statut mis à jour' });
+        res.status(201).json({ message: '✅ Données enregistrées avec succès.' });
     }
     catch (err) {
         console.error('Erreur insertion fin_tomo :', err);

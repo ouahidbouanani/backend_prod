@@ -1,46 +1,55 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const FinTomoController_1 = require("../../controllers/FormulairesFinis/FinTomoController");
 const router = express_1.default.Router();
-const finTomoController = __importStar(require("../../controllers/FormulairesFinis/FinTomoController"));
-router.post('/add', finTomoController.create);
-router.get('/all', finTomoController.getAll);
-// Obtenir tous les lots disponibles depuis la table debut_Tomo
-router.get('/lots', finTomoController.getLots);
+/**
+ * @openapi
+ * /api/fin-tomo-finis/lots:
+ *   get:
+ *     tags: [Tomo]
+ *     summary: Lister les lots disponibles (fin tomo finis)
+ *     responses:
+ *       200:
+ *         description: Liste
+ */
+router.get('/lots', FinTomoController_1.getLotsFinTomoFinis);
+/**
+ * @openapi
+ * /api/fin-tomo-finis/{id}:
+ *   get:
+ *     tags: [Tomo]
+ *     summary: Détails fin tomo (finis)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Détails
+ */
+router.get('/:id', FinTomoController_1.getFinTomoFinisById);
+/**
+ * @openapi
+ * /api/fin-tomo-finis:
+ *   post:
+ *     tags: [Tomo]
+ *     summary: Créer une fin tomo (finis)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: true
+ *     responses:
+ *       200:
+ *         description: Créé
+ */
+router.post('/', FinTomoController_1.createFinTomoFinis);
 exports.default = router;

@@ -18,17 +18,20 @@ const addImpression = async (req, res) => {
         const id_lot = result.id;
         await prisma_1.default.lot_status.upsert({
             where: { id_lot: id_lot },
-            update: { current_step: 'nouvelle_impression' },
+            update: { current_step: 'fin_impression' },
             create: {
                 id_lot: id_lot,
                 nb_pieces: nbPieces,
-                current_step: 'nouvelle_impression',
+                current_step: 'fin_impression',
                 activity,
                 type_piece: typePieces,
-                revision: versionPiece
+                revision: versionPiece,
+                disponible_finis: false,
             }
         });
-        res.status(200).json({ success: true, message: 'Données enregistrées et statut mis à jour' });
+        res.status(200).json({ success: true,
+            data: { id_lot },
+            message: '✅ Données enregistrées avec succès.' });
     }
     catch (err) {
         console.error('❌ Erreur lors de l\'insertion:', err);

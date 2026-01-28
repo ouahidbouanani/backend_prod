@@ -1,11 +1,56 @@
 import express from 'express';
-const router = express.Router()
-import * as finTomoController from '../../controllers/FormulairesFinis/FinTomoController';
+import { createFinTomoFinis, getFinTomoFinisById, getLotsFinTomoFinis } from '../../controllers/FormulairesFinis/FinTomoController';
 
-router.post('/add', finTomoController.create)
-router.get('/all', finTomoController.getAll)
+const router = express.Router();
 
-// Obtenir tous les lots disponibles depuis la table debut_Tomo
-router.get('/lots', finTomoController.getLots);
+/**
+ * @openapi
+ * /api/fin-tomo-finis/lots:
+ *   get:
+ *     tags: [Tomo]
+ *     summary: Lister les lots disponibles (fin tomo finis)
+ *     responses:
+ *       200:
+ *         description: Liste
+ */
+
+router.get('/lots', getLotsFinTomoFinis);
+
+/**
+ * @openapi
+ * /api/fin-tomo-finis/{id}:
+ *   get:
+ *     tags: [Tomo]
+ *     summary: Détails fin tomo (finis)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Détails
+ */
+router.get('/:id', getFinTomoFinisById);
+
+/**
+ * @openapi
+ * /api/fin-tomo-finis:
+ *   post:
+ *     tags: [Tomo]
+ *     summary: Créer une fin tomo (finis)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: true
+ *     responses:
+ *       200:
+ *         description: Créé
+ */
+router.post('/', createFinTomoFinis);
 
 export default router;

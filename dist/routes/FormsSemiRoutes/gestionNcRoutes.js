@@ -39,6 +39,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const router = express_1.default.Router();
 const controller = __importStar(require("../../controllers/FormulairesSemi/gestionNcController"));
+// Récuperer tous les lots 
+router.get('/nc/lots', controller.getLotsForNc);
 // POST - Déclarer une nouvelle NC
 router.post('/nc/add', controller.declarerNc);
 router.post('/nc/adds', controller.storeNcPieces);

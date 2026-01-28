@@ -20,7 +20,7 @@ export const getAvailableLotsForReference = async (req: Request, res: Response):
         disponible_finis: true,
       },
       select: {
-        id_lot: true                 // tu peux enlever/ajouter d’autres champs
+        id_lot: true                
       },
     });
 

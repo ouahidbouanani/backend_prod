@@ -10,21 +10,20 @@ exports.getLotDetails = exports.getAllLots = exports.dbInsertFinImpression = voi
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const dbInsertFinImpression = async (req, res) => {
     try {
-        const { id_lot, num_lot_wafer, nb_lancees, nb_imprimees, operateur, date_fin, commentaires } = req.body;
+        const { id_lot, num_lot_wafer, type_pieces, nb_lancees, nb_imprimees, operateur, date_fin, commentaires } = req.body;
         await prisma_1.default.$transaction(async (tx) => {
             await tx.fin_impression.create({
                 data: {
-                    id_lot, num_lot_wafer, nb_lancees, nb_imprimees,
+                    id_lot, num_lot_wafer, type_pieces, nb_lancees, nb_imprimees,
                     operateur, date_fin: new Date(date_fin), commentaires
                 }
             });
-            await tx.lot_status.upsert({
+            await tx.lot_status.update({
                 where: { id_lot: id_lot },
-                update: { current_step: 'fin_impression' },
-                create: { id_lot: id_lot, current_step: 'fin_impression', type_piece: '', revision: '' }
+                data: { current_step: 'debut_etching' },
             });
         });
-        res.status(200).json({ success: true, message: 'Toutes les données enregistrées avec succès' });
+        res.status(200).json({ success: true, message: '✅ Données enregistrées avec succès.' });
     }
     catch (err) {
         console.error('Erreur:', err);

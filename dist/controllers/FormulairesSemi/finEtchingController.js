@@ -61,13 +61,36 @@ const addFinEtching = async (req, res) => {
                     nb_piece_conforme, operateur, commentaire
                 }
             });
-            await tx.lot_status.upsert({
-                where: { id_lot: id_lot },
-                update: { current_step: 'fin_etching' },
-                create: { id_lot: id_lot, current_step: 'fin_etching', type_piece: '', revision: '' }
+            // On récupère le lot_status existant
+            const lotStatus = await tx.lot_status.findUnique({
+                where: { id_lot },
             });
+            if (!lotStatus) {
+                // Si pas trouvé, on considère que c’est une erreur métier
+                throw new Error(`lot_status introuvable pour id_lot=${id_lot}`);
+            }
+            // Vérifie si c’est un nozzle (type_piece commence par "N")
+            if (lotStatus.type_piece && lotStatus.type_piece.startsWith('N')) {
+                // Nozzle : on passe en "pret_assemblage" + disponible_finis = true
+                await tx.lot_status.update({
+                    where: { id_lot },
+                    data: {
+                        current_step: 'pret_assemblage',
+                        disponible_finis: true,
+                    },
+                });
+            }
+            else {
+                // Autres types : on garde ton ancien comportement (debut_tomo)
+                await tx.lot_status.update({
+                    where: { id_lot },
+                    data: {
+                        current_step: 'debut_tomo',
+                    },
+                });
+            }
         });
-        res.status(200).json({ message: 'Fin Etching enregistrée et statut mis à jour' });
+        res.status(200).json({ message: '✅ Données enregistrées avec succès.' });
     }
     catch (err) {
         console.error('Erreur ajout fin etching:', err);

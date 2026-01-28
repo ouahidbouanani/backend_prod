@@ -3,11 +3,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.storeNcPieces = exports.updateNc = exports.getNcById = exports.getNcNonTraitees = exports.getAllNc = exports.declarerNc = void 0;
+exports.storeNcPieces = exports.updateNc = exports.getNcById = exports.getNcNonTraitees = exports.getAllNc = exports.declarerNc = exports.getLotsForNc = void 0;
 // ============================================
 // controllers/FormulairesSemi/gestionNcController.js
 // ============================================
 const prisma_1 = __importDefault(require("../../config/prisma"));
+const getLotsForNc = async (req, res) => {
+    try {
+        const results = await prisma_1.default.nouvelle_impression.findMany({
+            select: {
+                id: true,
+            },
+        });
+        res.status(200).json(results);
+    }
+    catch (err) {
+        console.error('❌ Erreur lors de la récupération des lots:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur dans la récupération des lots',
+        });
+    }
+};
+exports.getLotsForNc = getLotsForNc;
 const declarerNc = async (req, res) => {
     try {
         const { id_lot, operateur, date, pieces } = req.body;

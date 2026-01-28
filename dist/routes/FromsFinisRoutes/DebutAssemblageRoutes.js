@@ -37,28 +37,63 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const controller = __importStar(require("../../controllers/FormulairesFinis/DebutAssemblageController"));
 const router = express_1.default.Router();
-const controller = __importStar(require("../../controllers/FormulairesFinis/AssemblageController"));
 /**
  * @openapi
- * /api/assemblage/lots-disponibles:
- *   get:
+ * /api/debutassemblage:
+ *   post:
  *     tags: [Assemblage]
- *     summary: Lots disponibles (assemblage)
+ *     summary: Créer un début assemblage
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: true
  *     responses:
  *       200:
- *         description: Liste des lots
+ *         description: Créé
  */
+router.post("/", controller.createDebutAssemblage);
 /**
  * @openapi
- * /api/debut-assemblage/lots-disponibles:
+ * /api/debutassemblage/lots-disponibles:
  *   get:
  *     tags: [Assemblage]
- *     summary: Lots disponibles (alias début-assemblage)
- *     description: "Même endpoint exposé sous 2 préfixes (router monté deux fois)."
+ *     summary: Lots disponibles pour assemblage
  *     responses:
  *       200:
- *         description: Liste des lots
+ *         description: Liste
  */
 router.get('/lots-disponibles', controller.getAvailableLotsForReference);
+/**
+ * @openapi
+ * /api/debutassemblage/ids:
+ *   get:
+ *     tags: [Assemblage]
+ *     summary: Liste des IDs début assemblage
+ *     responses:
+ *       200:
+ *         description: Tableau d'IDs
+ */
+router.get("/ids", controller.listDebutAssemblageIds);
+/**
+ * @openapi
+ * /api/debutassemblage/{id}:
+ *   get:
+ *     tags: [Assemblage]
+ *     summary: Détails d'un début assemblage
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Détails
+ */
+router.get("/:id", controller.getDebutAssemblageById);
 exports.default = router;

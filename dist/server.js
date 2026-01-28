@@ -7,7 +7,9 @@ const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const cors_1 = __importDefault(require("cors"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const prisma_1 = __importDefault(require("./config/prisma"));
+const swagger_1 = require("./config/swagger");
 const auth_Routes_1 = __importDefault(require("./routes/auth.Routes"));
 const suiviRoutes_1 = __importDefault(require("./routes/FormsSemiRoutes/suiviRoutes"));
 const impressionRoutes_1 = __importDefault(require("./routes/FormsSemiRoutes/impressionRoutes"));
@@ -29,8 +31,17 @@ const gestionNcRoutes_1 = __importDefault(require("./routes/FormsSemiRoutes/gest
 const calendarEventRoutes_1 = __importDefault(require("./routes/calendarEventRoutes"));
 const semiFinisAchetesRoutes_1 = __importDefault(require("./routes/admin/semiFinisAchetesRoutes"));
 const produitsFinisRoutes_1 = __importDefault(require("./routes/admin/produitsFinisRoutes"));
+const preAssemblageRoutes_1 = __importDefault(require("./routes/admin/preAssemblageRoutes"));
+const DebutPreAssemblageRoutes_1 = __importDefault(require("./routes/FromsFinisRoutes/DebutPreAssemblageRoutes"));
+const FinPreAssemblageRoutes_1 = __importDefault(require("./routes/FromsFinisRoutes/FinPreAssemblageRoutes"));
+const AssemeblageRoute_2 = __importDefault(require("./routes/FromsFinisRoutes/AssemeblageRoute"));
+const DebutAssemblageRoutes_1 = __importDefault(require("./routes/FromsFinisRoutes/DebutAssemblageRoutes"));
+const FinAssemblageRoutes_1 = __importDefault(require("./routes/FromsFinisRoutes/FinAssemblageRoutes"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
+const swaggerSpec = (0, swagger_1.createOpenApiSpec)({
+    baseUrl: process.env.SWAGGER_BASE_URL || `http://localhost:${PORT}`,
+});
 const allowedOrigins = [
     'http://localhost:5173',
     'https://frogbox-v2-5ugvb5gip-ouahidbouananis-projects.vercel.app',
@@ -51,6 +62,10 @@ const corsOptions = {
 app.use((0, cors_1.default)(corsOptions));
 app.use(body_parser_1.default.json());
 app.use((0, cookie_parser_1.default)());
+app.get('/api-docs.json', (req, res) => {
+    res.json(swaggerSpec);
+});
+app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerSpec, { explorer: true }));
 app.use('/api/impression', impressionRoutes_1.default);
 app.use('/api/fin-impression', finImpressionRoutes_1.default);
 app.use('/api/debut-etching', debutEtchingRoutes_1.default);
@@ -70,9 +85,19 @@ app.use('/api/denominations', denominationRoutes_1.default);
 app.use('/api/config', systemConfigRoutes_1.default);
 app.use('/api/versions', versionPieceRoutes_1.default);
 app.use('/api', calendarEventRoutes_1.default);
-// Nouvelles routes
 app.use('/api/semi-finis-achetes', semiFinisAchetesRoutes_1.default);
 app.use('/api/produits-finis', produitsFinisRoutes_1.default);
+app.use("/api/semi-finis-pre-assemblage", preAssemblageRoutes_1.default);
+app.use("/api/debutpreassemblage", DebutPreAssemblageRoutes_1.default);
+app.use("/api/finpreassemblage", FinPreAssemblageRoutes_1.default);
+app.use("/api/debut-assemblage", AssemeblageRoute_2.default);
+app.use("/api/debutassemblage", DebutAssemblageRoutes_1.default);
+app.use("/api/finassemblage", FinAssemblageRoutes_1.default);
+const server = app.listen(PORT, () => {
+    console.log(`✅ Serveur démarré sur le port ${PORT}`);
+    console.log(`🔗 http://localhost:${PORT}`);
+    console.log(`📚 Swagger UI: http://localhost:${PORT}/api-docs`);
+});
 const server = app.listen(PORT, () => {
     console.log(`✅ Serveur démarré sur le port ${PORT}`);
     console.log(`🔗 http://localhost:${PORT}`);

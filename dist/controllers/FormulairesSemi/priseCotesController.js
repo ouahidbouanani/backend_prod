@@ -121,10 +121,10 @@ const submitPieces = async (req, res) => {
             // 3. Mettre à jour le statut
             await tx.lot_status.update({
                 where: { id_lot: id_lot },
-                data: { current_step: 'prise_de_cotes' }
+                data: { current_step: 'fin_etching' }
             });
         });
-        res.status(200).json({ success: true, message: 'Données et statut enregistrés avec succès' });
+        res.status(200).json({ success: true, message: '✅ Données enregistrées avec succès.' });
     }
     catch (err) {
         console.error('Erreur:', err);

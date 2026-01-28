@@ -12,16 +12,6 @@ model activites {
   nom String @unique @db.VarChar(50)
 }
 
-model assemblage {
-  id          Int      @id @default(autoincrement())
-  activity    String   @db.VarChar(255)
-  quantite    Int?
-  id_nozzle   String?  @db.VarChar(25)
-  id_body     String?  @db.VarChar(25)
-  date        DateTime @db.Date
-  operateur   String   @db.VarChar(10)
-  commentaire String?  @db.Text
-}
 
 model cote_piece {
   id            Int     @id @default(autoincrement())
@@ -34,19 +24,6 @@ model cote_piece {
   piece piece? @relation(fields: [piece_id], references: [id])
 
   @@index([piece_id], map: "piece_id")
-}
-
-model debuttomo_finis {
-  id          String   @id @db.VarChar(50)
-  nb_pieces   Int
-  etage       Int
-  date        DateTime @db.Date
-  heure_debut DateTime @db.Time(0)
-  operateur   String   @db.VarChar(50)
-  num_machine String   @db.VarChar(50)
-  version     String   @db.VarChar(25)
-  separation  String   @db.VarChar(25)
-  commentaire String?  @db.Text
 }
 
 model debut_etching {
@@ -84,14 +61,6 @@ model denomination_options {
   id         Int       @id @default(autoincrement())
   name       String    @db.VarChar(255)
   created_at DateTime? @default(now()) @db.Timestamp(0)
-}
-
-model fintomo_finis {
-  id        String   @id @db.VarChar(50)
-  quantite  Int
-  date      DateTime @db.Date
-  heure     DateTime @db.Time(0)
-  operateur String   @db.VarChar(50)
 }
 
 model fin_etching {
@@ -158,18 +127,6 @@ model nc_pieces {
   id                 Int       @id @default(autoincrement())
   id_lot             String    @db.VarChar(50)
   id_piece           String    @db.VarChar(50)
-  operateur          String?   @db.VarChar(100)
-  date               DateTime? @db.Date
-  denomination       String?   @db.VarChar(100)
-  produit            String?   @db.VarChar(100)
-  type_de_production String?   @db.VarChar(100)
-  type               String?   @db.VarChar(50)
-  description        String?   @db.Text
-  decision           String?   @db.Text
-  cause_racine       String?   @db.Text
-  statut             String?   @default("Non traité") @db.VarChar(50)
-  created_at         DateTime? @default(now()) @db.Timestamp(0)
-  updated_at         DateTime? @default(now()) @updatedAt @db.Timestamp(0)
   justification      String?   @db.Text
   lien               String?   @db.Text
 }
@@ -266,3 +223,235 @@ model ProduitFiniReference {
   @@index([produitFiniId])
   @@map("produitfinireference")
 }
+
+
+model SemiFiniPreAssemblage {
+  id         Int                              @id @default(autoincrement())
+  nom        String
+  references SemiFiniPreAssemblageReference[]
+  createdAt  DateTime                         @default(now())
+
+  @@map("semifinipreassemblage")
+}
+
+model SemiFiniPreAssemblageReference {
+  id                      Int @id @default(autoincrement())
+  semiFiniPreAssemblageId Int
+
+  // 'semi-finis' | 'semi-finis-achetes'
+  type String
+
+  nom String
+
+  quantite        Int
+  tracerNumeroLot Boolean @default(false)
+
+  semiFiniPreAssemblage SemiFiniPreAssemblage @relation(fields: [semiFiniPreAssemblageId], references: [id], onDelete: Cascade)
+
+  @@index([semiFiniPreAssemblageId])
+  @@map("semifinipreassemblagereference")
+}
+
+model debut_preassemblage {
+  id_debutpreassemblage String @id @db.VarChar(50)
+
+  activite     String @db.VarChar(50)
+  produit_fini String @db.VarChar(50)
+
+  lot_corps Int
+  date      DateTime @db.Date
+
+  operateur String @db.VarChar(20)
+
+  piece_disponible  Int @default(0)
+  quantite_utilisee Int @default(0)
+
+  commentaire String? @db.Text
+
+  created_at DateTime @default(now())
+
+  references debut_preassemblage_reference[]
+  pieces     debut_preassemblage_piece[]
+  fin        fin_preassemblage?
+
+  @@index([produit_fini])
+  @@index([lot_corps])
+  @@index([date])
+}
+
+model debut_preassemblage_reference {
+  id                    Int @id @default(autoincrement())
+  id_debutpreassemblage String @db.VarChar(50)
+
+  reference_nom String @db.VarChar(150)
+  lot_valeur    String @db.VarChar(100)
+
+  created_at DateTime @default(now())
+
+  debut_preassemblage debut_preassemblage @relation(fields: [id_debutpreassemblage], references: [id_debutpreassemblage])
+
+  @@unique([id_debutpreassemblage, reference_nom])
+  @@index([id_debutpreassemblage])
+}
+
+model debut_preassemblage_piece {
+  id                    Int @id @default(autoincrement())
+  id_debutpreassemblage String @db.VarChar(50)
+
+  piece_code String @db.VarChar(60)
+
+  created_at DateTime @default(now())
+
+  debut_preassemblage debut_preassemblage @relation(fields: [id_debutpreassemblage], references: [id_debutpreassemblage])
+
+  @@index([id_debutpreassemblage])
+}
+
+
+//tables fin de pré-asse
+model fin_preassemblage {
+  id_debutpreassemblage String   @id @db.VarChar(50)
+  activite     String @db.VarChar(50)
+  produit_fini String @db.VarChar(50)
+  date                  DateTime @db.Date
+  operateur             String   @db.VarChar(20)
+  commentaire           String?  @db.Text
+
+  created_at            DateTime @default(now())
+
+  debut debut_preassemblage @relation(fields: [id_debutpreassemblage], references: [id_debutpreassemblage], onDelete: Cascade )
+
+  pieces fin_preassemblage_piece[]
+}
+
+model fin_preassemblage_piece {
+  id                    Int      @id @default(autoincrement())
+
+  id_debutpreassemblage String   @db.VarChar(50)
+  piece_code            String   @db.VarChar(60)
+
+  qc_ok                 Boolean  @default(false)
+
+  created_at            DateTime @default(now())
+
+  fin fin_preassemblage @relation(fields: [id_debutpreassemblage], references: [id_debutpreassemblage], onDelete: Cascade)
+
+  @@unique([id_debutpreassemblage, piece_code])
+  @@index([id_debutpreassemblage])
+}
+
+// tables debut assemblage (structure similaire au debut_preassemblage)
+model debut_assemblage {
+  id_debutassemblage String @id @db.VarChar(50)
+
+  activite     String @db.VarChar(50)
+  produit_fini String @db.VarChar(50)
+  lot_asm      String @db.VarChar(50)
+
+  date      DateTime @db.Date
+  operateur String   @db.VarChar(20)
+
+  piece_disponible  Int @default(0)
+  quantite_utilisee Int @default(0)
+
+  commentaire String? @db.Text
+
+  created_at DateTime @default(now())
+
+  references debut_assemblage_reference[]
+  pieces     debut_assemblage_piece[]
+  fin        fin_assemblage?
+
+  @@index([produit_fini])
+  @@index([lot_asm])
+  @@index([date])
+}
+
+model debut_assemblage_reference {
+  id                 Int @id @default(autoincrement())
+  id_debutassemblage String @db.VarChar(50)
+
+  reference_nom String @db.VarChar(150)
+  lot_valeur    String @db.VarChar(100)
+
+  created_at DateTime @default(now())
+
+  debut_assemblage debut_assemblage @relation(fields: [id_debutassemblage], references: [id_debutassemblage])
+
+  @@unique([id_debutassemblage, reference_nom])
+  @@index([id_debutassemblage])
+}
+
+model debut_assemblage_piece {
+  id                 Int @id @default(autoincrement())
+  id_debutassemblage String @db.VarChar(50)
+
+  piece_code String @db.VarChar(60)
+
+  created_at DateTime @default(now())
+
+  debut_assemblage debut_assemblage @relation(fields: [id_debutassemblage], references: [id_debutassemblage])
+
+  @@index([id_debutassemblage])
+}
+
+model fin_assemblage {
+  id_finassemblage   String   @id @db.VarChar(50)
+  date        DateTime @db.Date
+  operateur   String   @db.VarChar(20)
+  commentaire String?  @db.Text
+
+  created_at DateTime @default(now())
+
+  debut  debut_assemblage @relation(fields: [id_finassemblage], references: [id_debutassemblage], onDelete: Cascade)
+  pieces fin_assemblage_piece[]
+}
+
+model fin_assemblage_piece {
+  id                 Int      @id @default(autoincrement())
+  id_finassemblage   String   @db.VarChar(50)
+  piece_code         String   @db.VarChar(60)
+
+  qc_ok               Boolean  @default(false)
+
+  created_at DateTime @default(now())
+
+  fin fin_assemblage @relation(fields: [id_finassemblage], references: [id_finassemblage], onDelete: Cascade)
+
+  @@unique([id_finassemblage, piece_code])
+  @@index([id_finassemblage])
+}
+
+// ================================
+// Production finis - Tomographie
+// ================================
+model debuttomo_finis {
+  id_debuttomo String   @id @db.VarChar(50)
+  activite     String   @db.VarChar(50)
+  produit_fini String   @db.VarChar(50)
+  nb_puces_disponibles Int
+  nb_puces_tomo Int
+  etage        Int
+  date         DateTime @db.Date
+  heure_debut  DateTime @db.Time(0)
+  operateur    String   @db.VarChar(50)
+  num_machine  String   @db.VarChar(50)
+  version      String   @db.VarChar(25)
+  separation   String   @db.VarChar(25)
+  commentaire  String?  @db.Text
+
+  @@index([id_debuttomo])
+}
+
+model fin_tomo_finis {
+  id_debuttomo String   @id @db.VarChar(50)
+  activite     String   @db.VarChar(50)
+  produit_fini String   @db.VarChar(50)
+  nb_puces_tomo Int
+  date         DateTime @db.Date
+  heure        DateTime @db.Time(0)
+  operateur    String   @db.VarChar(50)
+  commentaire  String?  @db.Text
+}
+
+
