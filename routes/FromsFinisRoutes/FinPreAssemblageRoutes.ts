@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createFinPreassemblage, getFinPreassemblageById, getFinPreassemblageIds } from "../../controllers/FormulairesFinis/FinPreAssemblageController";
+import { createFinPreassemblage,  getFinPreassemblageById, getFinPreassemblageIds, getFinPreassemblageIdsDisponiblesPourDebutAssemblage } from "../../controllers/FormulairesFinis/FinPreAssemblageController";
 
 const router = Router();
 
@@ -49,6 +49,8 @@ router.post("/", createFinPreassemblage);
  *                 type: string
  */
 router.get("/ids", getFinPreassemblageIds);
+
+router.get("/ids-disponibles-debut-assemblage", getFinPreassemblageIdsDisponiblesPourDebutAssemblage);
 
 /**
  * @openapi

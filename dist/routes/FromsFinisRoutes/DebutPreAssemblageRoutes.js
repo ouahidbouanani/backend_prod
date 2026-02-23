@@ -122,6 +122,8 @@ router.get("/", DebutPreAssemblageController_1.listDebutPreassemblage);
  *         description: Existe déjà
  */
 router.post("/", DebutPreAssemblageController_1.createDebutPreassemblage);
+// pièces déjà déclarées pour (produit_fini, lot_corps)
+router.get("/pieces-utilisees", DebutPreAssemblageController_1.getPiecesUtiliseesByProduitLot);
 /**
  * @openapi
  * /api/debutpreassemblage/{id}:

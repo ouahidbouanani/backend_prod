@@ -5,7 +5,8 @@ import {
   createDebutPreassemblage,
   listDebutPreassemblage,
   getDebutPreassemblageById,
-  listDebutPreassemblageIds
+  listDebutPreassemblageIds,
+  getPiecesUtiliseesByProduitLot
 } from "../../controllers/FormulairesFinis/DebutPreAssemblageController";
 
 const router = Router();
@@ -133,6 +134,9 @@ router.get("/", listDebutPreassemblage);
  *         description: Existe déjà
  */
 router.post("/", createDebutPreassemblage);
+
+// pièces déjà déclarées pour (produit_fini, lot_corps)
+router.get("/pieces-utilisees", getPiecesUtiliseesByProduitLot);
 
 /**
  * @openapi

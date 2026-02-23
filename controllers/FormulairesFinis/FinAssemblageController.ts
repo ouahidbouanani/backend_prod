@@ -134,9 +134,18 @@ export const getFinAssemblageById = async (req: Request, res: Response): Promise
  */
 export const getFinAssemblageIds = async (_req: Request, res: Response): Promise<void> => {
   try {
+    // Exclure les dossiers déjà déclarés dans `debuttomo_finis`
+    // (donc non disponibles pour une nouvelle déclaration).
+    const alreadyDeclared = await prisma.debuttomo_finis.findMany({
+      select: { id_debuttomo: true },
+    });
+    const declaredIds = alreadyDeclared.map((r) => r.id_debuttomo);
+
     const ids = await prisma.fin_assemblage.findMany({
+      where: declaredIds.length ? { id_finassemblage: { notIn: declaredIds } } : undefined,
       select: { id_finassemblage: true },
     });
+
     res.json(ids.map((item) => item.id_finassemblage));
   } catch (err: any) {
     console.error("Erreur getFinAssemblageIds:", err);

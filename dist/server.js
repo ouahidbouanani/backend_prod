@@ -98,10 +98,6 @@ const server = app.listen(PORT, () => {
     console.log(`🔗 http://localhost:${PORT}`);
     console.log(`📚 Swagger UI: http://localhost:${PORT}/api-docs`);
 });
-const server = app.listen(PORT, () => {
-    console.log(`✅ Serveur démarré sur le port ${PORT}`);
-    console.log(`🔗 http://localhost:${PORT}`);
-});
 const gracefulShutdown = async (signal) => {
     console.log(`\n🛑 ${signal} reçu, arrêt du serveur...`);
     server.close(async () => {

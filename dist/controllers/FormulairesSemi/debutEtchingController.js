@@ -26,11 +26,22 @@ const getLots = async (req, res) => {
             select: {
                 id_lot: true,
                 num_lot_wafer: true,
-                nb_imprimees: true,
-                type_pieces: true,
+                nb_imprimees: true
             }
         });
-        res.status(200).json(results);
+        // `fin_impression` ne contient pas `type_pieces` dans le schéma Prisma.
+        // On le récupère depuis `lot_status.type_piece` et on renvoie la clé attendue `type_pieces`.
+        const lotIds = results.map(item => item.id_lot);
+        const lotStatuses = await prisma_1.default.lot_status.findMany({
+            where: { id_lot: { in: lotIds } },
+            select: { id_lot: true, type_piece: true }
+        });
+        const typeByLotId = new Map(lotStatuses.map(ls => [ls.id_lot, ls.type_piece]));
+        const enriched = results.map(r => ({
+            ...r,
+            type_pieces: typeByLotId.get(r.id_lot) ?? null
+        }));
+        res.status(200).json(enriched);
     }
     catch (err) {
         console.error('Erreur lors de la récupération des lots:', err);
@@ -45,7 +56,6 @@ const addDebutEtching = async (req, res) => {
             await tx.debut_etching.create({
                 data: {
                     id_lot: numeroLot,
-                    type_pieces,
                     num_lot_wafer,
                     nb_pieces,
                     operateur,

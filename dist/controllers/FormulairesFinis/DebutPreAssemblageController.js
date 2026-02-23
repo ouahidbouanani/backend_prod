@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.listDebutPreassemblageIds = exports.getDebutPreassemblageById = exports.listDebutPreassemblage = exports.createDebutPreassemblage = exports.getPiecesDisponiblesByLot = exports.getAvailableLotsForReference = void 0;
+exports.listDebutPreassemblageIds = exports.getDebutPreassemblageById = exports.listDebutPreassemblage = exports.createDebutPreassemblage = exports.getPiecesUtiliseesByProduitLot = exports.getPiecesDisponiblesByLot = exports.getAvailableLotsForReference = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const s = (v) => (v === undefined || v === null ? "" : String(v).trim());
 /**
@@ -66,6 +66,44 @@ const getPiecesDisponiblesByLot = async (req, res) => {
 };
 exports.getPiecesDisponiblesByLot = getPiecesDisponiblesByLot;
 /**
+ * GET /api/debutpreassemblage/pieces-utilisees?produit_fini=SK&lot_corps=2
+ * -> renvoie les pièces déjà déclarées pour (produit_fini, lot_corps)
+ */
+const getPiecesUtiliseesByProduitLot = async (req, res) => {
+    try {
+        const produit_fini = typeof req.query.produit_fini === "string" ? req.query.produit_fini.trim() : "";
+        const lot_corps_raw = req.query.lot_corps;
+        if (!produit_fini) {
+            res.status(400).json({ error: 'Paramètre "produit_fini" obligatoire' });
+            return;
+        }
+        if (lot_corps_raw === undefined) {
+            res.status(400).json({ error: 'Paramètre "lot_corps" obligatoire' });
+            return;
+        }
+        const lot_corps = Number(lot_corps_raw);
+        if (!Number.isFinite(lot_corps) || lot_corps <= 0) {
+            res.status(400).json({ error: 'Paramètre "lot_corps" invalide' });
+            return;
+        }
+        const rows = await prisma_1.default.debut_preassemblage_piece.findMany({
+            where: {
+                debut_preassemblage: {
+                    produit_fini,
+                    lot_corps,
+                },
+            },
+            select: { piece_code: true },
+        });
+        res.json(rows.map((r) => r.piece_code));
+    }
+    catch (err) {
+        console.error("Erreur getPiecesUtiliseesByProduitLot:", err);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+};
+exports.getPiecesUtiliseesByProduitLot = getPiecesUtiliseesByProduitLot;
+/**
  * POST /api/debutpreassemblage
  * body:
  * {
@@ -89,7 +127,6 @@ const createDebutPreassemblage = async (req, res) => {
         const dateStr = s(req.body.date);
         const operateur = s(req.body.operateur);
         const piece_disponible = Number(req.body.piece_disponible ?? 0);
-        const quantite_utilisee = Number(req.body.quantite_utilisee ?? 0);
         const commentaire = s(req.body.commentaire);
         if (!activite || !produit_fini || !dateStr || !operateur) {
             res.status(400).json({ error: "Champs obligatoires manquants" });
@@ -98,19 +135,6 @@ const createDebutPreassemblage = async (req, res) => {
         const lot_corps = Number(lot_corps_raw);
         if (!Number.isFinite(lot_corps) || lot_corps <= 0) {
             res.status(400).json({ error: "lot_corps invalide" });
-            return;
-        }
-        const id_debutpreassemblage = `ASM-${produit_fini}-${lot_corps}`;
-        // bloque doublon (PK)
-        const exists = await prisma_1.default.debut_preassemblage.findUnique({
-            where: { id_debutpreassemblage },
-            select: { id_debutpreassemblage: true },
-        });
-        if (exists) {
-            res.status(409).json({
-                error: "Ce début pré-assemblage existe déjà",
-                id_debutpreassemblage,
-            });
             return;
         }
         // references: [{reference_nom, lot_valeur}]
@@ -135,23 +159,60 @@ const createDebutPreassemblage = async (req, res) => {
             .map((piece_code) => ({ piece_code }));
         // (optionnel) cohérence : quantite_utilisee = nb pièces cochées
         const quantiteFinale = piecesCreate.length;
-        const created = await prisma_1.default.debut_preassemblage.create({
-            data: {
-                id_debutpreassemblage,
-                activite,
-                produit_fini,
-                lot_corps,
-                date: new Date(dateStr),
-                operateur,
-                piece_disponible: Number.isFinite(piece_disponible) ? piece_disponible : 0,
-                quantite_utilisee: quantiteFinale,
-                commentaire: commentaire || null,
-                references: { create: refsCreate },
-                pieces: { create: piecesCreate },
-            },
-            select: { id_debutpreassemblage: true },
-        });
-        res.json(created);
+        // ✅ ID auto: PSM-${produit_fini}-${numero_incr}
+        const prefix = `PSM-${produit_fini}-`;
+        const parseSuffixNumber = (id) => {
+            if (!id || !id.startsWith(prefix))
+                return null;
+            const suffix = id.slice(prefix.length);
+            const n = Number(String(suffix).trim());
+            return Number.isFinite(n) && n > 0 ? n : null;
+        };
+        const formatId = (n) => {
+            const numPart = n < 10 ? String(n).padStart(2, "0") : String(n);
+            return `${prefix}${numPart}`;
+        };
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            const ids = await prisma_1.default.debut_preassemblage.findMany({
+                where: {
+                    produit_fini,
+                    id_debutpreassemblage: { startsWith: prefix },
+                },
+                select: { id_debutpreassemblage: true },
+            });
+            const maxNum = ids
+                .map((r) => parseSuffixNumber(r.id_debutpreassemblage))
+                .filter((n) => n !== null)
+                .reduce((acc, n) => (n > acc ? n : acc), 0);
+            const id_debutpreassemblage = formatId(maxNum + 1);
+            try {
+                const created = await prisma_1.default.debut_preassemblage.create({
+                    data: {
+                        id_debutpreassemblage,
+                        activite,
+                        produit_fini,
+                        lot_corps,
+                        date: new Date(dateStr),
+                        operateur,
+                        piece_disponible: Number.isFinite(piece_disponible) ? piece_disponible : 0,
+                        quantite_utilisee: quantiteFinale,
+                        commentaire: commentaire || null,
+                        references: { create: refsCreate },
+                        pieces: { create: piecesCreate },
+                    },
+                    select: { id_debutpreassemblage: true },
+                });
+                res.json(created);
+                return;
+            }
+            catch (err) {
+                if (err?.code === "P2002") {
+                    continue;
+                }
+                throw err;
+            }
+        }
+        res.status(409).json({ error: "Impossible de générer un ID unique (réessayez)" });
     }
     catch (err) {
         console.error("Erreur createDebutPreassemblage:", err);

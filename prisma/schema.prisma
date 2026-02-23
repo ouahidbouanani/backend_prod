@@ -30,7 +30,6 @@ model debut_etching {
   id            Int       @id @default(autoincrement())
   id_lot        Int
   num_lot_wafer String?   @db.VarChar(50)
-  type_pieces   String?   @db.VarChar(50)
   nb_pieces     Int?
   operateur     String?   @db.VarChar(50)
   nb_passage    Int?
@@ -45,7 +44,7 @@ model debut_etching {
 }
 
 model debut_tomo {
-  id_lot      Int    @id
+  id_lot      Int      @id
   nb_pieces   Int
   etage       Int
   date        DateTime @db.Date
@@ -63,21 +62,21 @@ model denomination_options {
   created_at DateTime? @default(now()) @db.Timestamp(0)
 }
 
+
 model fin_etching {
-  id_lot            Int      @id @default(autoincrement())
-  num_lot_wafer     String   @db.VarChar(50)
+  id_lot            Int     @id @default(autoincrement())
+  num_lot_wafer     String  @db.VarChar(50)
   nb_passage        Int
   date_fin          String
   heure_fin         String
   nb_piece_conforme Int
-  operateur         String   @db.VarChar(100)
-  commentaire       String?  @db.Text
+  operateur         String  @db.VarChar(100)
+  commentaire       String? @db.Text
 }
 
 model fin_impression {
   id_lot        Int       @id
   num_lot_wafer String?   @db.VarChar(50)
-  type_pieces    String?   @db.VarChar(50)
   nb_lancees    Int?
   nb_imprimees  Int?
   operateur     String?   @db.VarChar(100)
@@ -86,7 +85,7 @@ model fin_impression {
 }
 
 model fin_tomo {
-  id_lot    Int   @id
+  id_lot    Int      @id
   quantite  Int
   date      DateTime @db.Date
   heure     DateTime @db.Time(0)
@@ -99,14 +98,14 @@ model imprimantes {
 }
 
 model lot_status {
-  id_lot          Int       @id
-  nb_pieces       Int?
-  current_step    String?   @db.VarChar(100)
-  updated_at      DateTime? @default(now()) @updatedAt @db.DateTime(0)
-  activity        String?   @db.VarChar(25)
-  type_piece      String    @db.VarChar(100)
-  revision        String    @db.VarChar(50)
-  disponible_finis Boolean  @default(false)
+  id_lot           Int       @id
+  nb_pieces        Int?
+  current_step     String?   @db.VarChar(100)
+  updated_at       DateTime? @default(now()) @updatedAt @db.DateTime(0)
+  activity         String?   @db.VarChar(25)
+  type_piece       String    @db.VarChar(100)
+  revision         String    @db.VarChar(50)
+  disponible_finis Boolean   @default(false)
 
   @@index([type_piece, current_step, disponible_finis], name: "idx_lot_status_type_step_dispo")
 }
@@ -127,6 +126,18 @@ model nc_pieces {
   id                 Int       @id @default(autoincrement())
   id_lot             String    @db.VarChar(50)
   id_piece           String    @db.VarChar(50)
+  operateur          String?   @db.VarChar(100)
+  date               DateTime? @db.Date
+  denomination       String?   @db.VarChar(100)
+  produit            String?   @db.VarChar(100)
+  type_de_production String?   @db.VarChar(100)
+  type               String?   @db.VarChar(50)
+  description        String?   @db.Text
+  decision           String?   @db.Text
+  cause_racine       String?   @db.Text
+  statut             String?   @default("Non traité") @db.VarChar(50)
+  created_at         DateTime? @default(now()) @db.Timestamp(0)
+  updated_at         DateTime? @default(now()) @updatedAt @db.Timestamp(0)
   justification      String?   @db.Text
   lien               String?   @db.Text
 }
@@ -186,6 +197,7 @@ model CalendarEvent {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@map("calendarevent")
 }
 
@@ -195,14 +207,17 @@ model SemiFiniAchete {
   nom       String   @unique
   quantite  Int      @default(0)
   createdAt DateTime @default(now())
+
   @@map("semifiniachete")
 }
 
+//produit finis et ses references
 model ProduitFini {
   id         Int                    @id @default(autoincrement())
   nom        String
   references ProduitFiniReference[]
   createdAt  DateTime               @default(now())
+
   @@map("produitfini")
 }
 
@@ -223,7 +238,6 @@ model ProduitFiniReference {
   @@index([produitFiniId])
   @@map("produitfinireference")
 }
-
 
 model SemiFiniPreAssemblage {
   id         Int                              @id @default(autoincrement())
@@ -310,7 +324,7 @@ model debut_preassemblage_piece {
 
 //tables fin de pré-asse
 model fin_preassemblage {
-  id_debutpreassemblage String   @id @db.VarChar(50)
+  id_finpreassemblage String   @id @map("id_debutpreassemblage") @db.VarChar(50)
   activite     String @db.VarChar(50)
   produit_fini String @db.VarChar(50)
   date                  DateTime @db.Date
@@ -319,7 +333,7 @@ model fin_preassemblage {
 
   created_at            DateTime @default(now())
 
-  debut debut_preassemblage @relation(fields: [id_debutpreassemblage], references: [id_debutpreassemblage], onDelete: Cascade )
+  debut debut_preassemblage @relation(fields: [id_finpreassemblage], references: [id_debutpreassemblage], onDelete: Cascade )
 
   pieces fin_preassemblage_piece[]
 }
@@ -327,17 +341,17 @@ model fin_preassemblage {
 model fin_preassemblage_piece {
   id                    Int      @id @default(autoincrement())
 
-  id_debutpreassemblage String   @db.VarChar(50)
+  id_finpreassemblage String   @map("id_debutpreassemblage") @db.VarChar(50)
   piece_code            String   @db.VarChar(60)
 
   qc_ok                 Boolean  @default(false)
 
   created_at            DateTime @default(now())
 
-  fin fin_preassemblage @relation(fields: [id_debutpreassemblage], references: [id_debutpreassemblage], onDelete: Cascade)
+  fin fin_preassemblage @relation(fields: [id_finpreassemblage], references: [id_finpreassemblage], onDelete: Cascade)
 
-  @@unique([id_debutpreassemblage, piece_code])
-  @@index([id_debutpreassemblage])
+  @@unique([id_finpreassemblage, piece_code])
+  @@index([id_finpreassemblage])
 }
 
 // tables debut assemblage (structure similaire au debut_preassemblage)

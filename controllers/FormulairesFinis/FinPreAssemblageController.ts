@@ -6,7 +6,7 @@ import prisma  from "../../config/prisma";
  * POST /api/finpreassemblage  (CREATE ONLY)
  * body:
  * {
- *   id_debutpreassemblage: "ASM-SK-2",
+ *   id_finpreassemblage: "PSM-SK-01" (même valeur que l'id du début),
  *   date: "2026-01-20",
  *   operateur: "OBO",
  *   commentaire: null,
@@ -15,12 +15,15 @@ import prisma  from "../../config/prisma";
  */
 export const createFinPreassemblage = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { activite, produit_fini ,id_debutpreassemblage, date, operateur, commentaire, pieces } = req.body;
+    const { activite, produit_fini, id_finpreassemblage, date, operateur, commentaire, pieces } = req.body;
+
+    // ⚠️ id_finpreassemblage = l'id du dossier début (même valeur)
+    const id_debutpreassemblage = id_finpreassemblage;
 
     // validations minimales
     if (!id_debutpreassemblage || !date || !operateur) {
       res.status(400).json({
-        error: "Champs obligatoires: id_debutpreassemblage, date, operateur",
+        error: "Champs obligatoires: id_finpreassemblage, date, operateur",
       });
       return;
     }
@@ -38,8 +41,8 @@ export const createFinPreassemblage = async (req: Request, res: Response): Promi
 
     // 2) empêcher double création FIN
     const already = await prisma.fin_preassemblage.findUnique({
-      where: { id_debutpreassemblage },
-      select: { id_debutpreassemblage: true },
+      where: { id_finpreassemblage: id_debutpreassemblage },
+      select: { id_finpreassemblage: true },
     });
 
     if (already) {
@@ -69,7 +72,7 @@ export const createFinPreassemblage = async (req: Request, res: Response): Promi
     const created = await prisma.$transaction(async (tx) => {
       const header = await tx.fin_preassemblage.create({
         data: {
-          id_debutpreassemblage,
+          id_finpreassemblage: id_debutpreassemblage,
           activite: activite,
           produit_fini: produit_fini,
           date: new Date(date),
@@ -77,7 +80,7 @@ export const createFinPreassemblage = async (req: Request, res: Response): Promi
           commentaire: commentaire ?? null,
         },
         select: {
-          id_debutpreassemblage: true,
+          id_finpreassemblage: true,
           date: true,
           operateur: true,
           commentaire: true,
@@ -87,7 +90,7 @@ export const createFinPreassemblage = async (req: Request, res: Response): Promi
       if (cleanedPieces.length > 0) {
         await tx.fin_preassemblage_piece.createMany({
           data: cleanedPieces.map((p: any) => ({
-            id_debutpreassemblage,
+            id_finpreassemblage: id_debutpreassemblage,
             piece_code: p.piece_code,
             qc_ok: p.qc_ok,
           })),
@@ -117,9 +120,9 @@ export const getFinPreassemblageById = async (req: Request, res: Response): Prom
     const id = req.params.id;
 
     const row = await prisma.fin_preassemblage.findUnique({
-      where: { id_debutpreassemblage: id },
+      where: { id_finpreassemblage: id },
       select: {
-        id_debutpreassemblage: true,
+        id_finpreassemblage: true,
         date: true,
         operateur: true,
         commentaire: true,
@@ -150,12 +153,12 @@ export const getFinPreassemblageIds = async (
   try {
     const ids = await prisma.fin_preassemblage.findMany({
       select: {
-        id_debutpreassemblage: true,
+        id_finpreassemblage: true,
       },
     });
 
     // Optionnel : retourner juste un tableau de strings
-    const result = ids.map(item => item.id_debutpreassemblage);
+    const result = ids.map((item) => item.id_finpreassemblage);
 
     res.json(result);
   } catch (err: any) {
@@ -166,3 +169,45 @@ export const getFinPreassemblageIds = async (
     });
   }
 };
+
+// GET /api/finpreassemblage/ids-disponibles-debut-assemblage
+// Retourne les IDs fin_preassemblage qui ne sont pas encore utilisés comme LOT ASM dans debut_assemblage
+export const getFinPreassemblageIdsDisponiblesPourDebutAssemblage = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const activite = typeof req.query.activite === "string" ? req.query.activite.trim() : "";
+
+    const usedRows = await prisma.debut_assemblage.findMany({
+      select: { lot_asm: true, id_debutassemblage: true },
+    });
+
+    const usedIds = Array.from(
+      new Set(
+        usedRows
+          .flatMap((r) => [r.lot_asm, r.id_debutassemblage])
+          .map((v) => (typeof v === "string" ? v.trim() : ""))
+          .filter(Boolean)
+      )
+    );
+
+    const whereFin: any = {};
+    if (activite) whereFin.activite = activite;
+    if (usedIds.length) whereFin.id_finpreassemblage = { notIn: usedIds };
+
+    const ids = await prisma.fin_preassemblage.findMany({
+      where: Object.keys(whereFin).length ? whereFin : undefined,
+      select: { id_finpreassemblage: true },
+    });
+
+    res.json(ids.map((item) => item.id_finpreassemblage));
+  } catch (err: any) {
+    console.error("Erreur getFinPreassemblageIdsDisponiblesPourDebutAssemblage:", err);
+    res.status(500).json({
+      error: "Erreur serveur",
+      details: err?.message ?? String(err),
+    });
+  }
+};
+

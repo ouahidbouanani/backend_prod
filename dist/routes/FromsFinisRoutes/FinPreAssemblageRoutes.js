@@ -48,6 +48,7 @@ router.post("/", FinPreAssemblageController_1.createFinPreassemblage);
  *                 type: string
  */
 router.get("/ids", FinPreAssemblageController_1.getFinPreassemblageIds);
+router.get("/ids-disponibles-debut-assemblage", FinPreAssemblageController_1.getFinPreassemblageIdsDisponiblesPourDebutAssemblage);
 /**
  * @openapi
  * /api/finpreassemblage/{id}:

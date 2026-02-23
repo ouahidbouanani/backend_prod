@@ -49,6 +49,24 @@ router.get("/ids", controller.listDebutAssemblageIds);
 
 /**
  * @openapi
+ * /api/debutassemblage/preassemblage/{id}:
+ *   get:
+ *     tags: [Assemblage]
+ *     summary: Pièces (QC ok) depuis fin pré-assemblage
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Pièces et quantité
+ */
+router.get("/preassemblage/:id", controller.getPreassemblagePiecesForDebutAssemblage);
+
+/**
+ * @openapi
  * /api/debutassemblage/{id}:
  *   get:
  *     tags: [Assemblage]
