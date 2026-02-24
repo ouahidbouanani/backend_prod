@@ -24,6 +24,11 @@ const router = Router();
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: activite
+ *         required: false
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Liste des lots

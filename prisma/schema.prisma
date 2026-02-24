@@ -218,7 +218,6 @@ model CalendarEvent {
 model SemiFiniAchete {
   id        Int      @id @default(autoincrement())
   nom       String   @unique
-  quantite  Int      @default(0)
   createdAt DateTime @default(now())
 
   @@map("semifiniachete")

@@ -7,12 +7,13 @@ exports.listDebutPreassemblageIds = exports.getDebutPreassemblageById = exports.
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const s = (v) => (v === undefined || v === null ? "" : String(v).trim());
 /**
- * GET /api/debutpreassemblage/lots-disponibles?reference=XXX
+ * GET /api/debutpreassemblage/lots-disponibles?reference=XXX&activite=YYY
  * -> lots dispo depuis lot_status
  */
 const getAvailableLotsForReference = async (req, res) => {
     try {
         const reference = req.query.reference;
+        const activite = typeof req.query.activite === "string" ? req.query.activite.trim() : "";
         if (!reference || typeof reference !== "string") {
             res.status(400).json({ error: 'Paramètre "reference" obligatoire' });
             return;
@@ -22,6 +23,7 @@ const getAvailableLotsForReference = async (req, res) => {
                 type_piece: reference,
                 current_step: "pret_assemblage",
                 disponible_finis: true,
+                ...(activite ? { activity: activite } : {}),
             },
             select: { id_lot: true },
             orderBy: { id_lot: "asc" },
@@ -34,6 +36,55 @@ const getAvailableLotsForReference = async (req, res) => {
     }
 };
 exports.getAvailableLotsForReference = getAvailableLotsForReference;
+const splitLots = (raw) => String(raw ?? "")
+    .split(",")
+    .map((x) => String(x).trim())
+    .filter(Boolean);
+const parseLotId = (raw) => {
+    const n = Number(String(raw ?? "").trim());
+    if (!Number.isFinite(n) || n <= 0)
+        return null;
+    if (!Number.isInteger(n))
+        return null;
+    return n;
+};
+const ensureLotMatches = async (args) => {
+    const { activite, reference_nom, id_lot } = args;
+    const row = await prisma_1.default.lot_status.findUnique({
+        where: { id_lot },
+        select: { id_lot: true, activity: true, type_piece: true, current_step: true, disponible_finis: true },
+    });
+    if (!row)
+        return `lot_status introuvable pour id_lot=${id_lot}`;
+    if (!row.disponible_finis)
+        return `Lot ${id_lot} non disponible pour finis`;
+    if (row.current_step !== "pret_assemblage")
+        return `Lot ${id_lot} n'est pas au step pret_assemblage`;
+    if (String(row.type_piece ?? "").trim() !== String(reference_nom ?? "").trim()) {
+        return `Lot ${id_lot} ne correspond pas à la référence ${reference_nom}`;
+    }
+    if (activite && String(row.activity ?? "").trim() !== String(activite).trim()) {
+        return `Lot ${id_lot} appartient à l'activité ${row.activity ?? ""} (attendu: ${activite})`;
+    }
+    return null;
+};
+const ensureLotMatchesSoft = async (args) => {
+    const { activite, id_lot } = args;
+    const row = await prisma_1.default.lot_status.findUnique({
+        where: { id_lot },
+        select: { id_lot: true, activity: true, current_step: true, disponible_finis: true },
+    });
+    if (!row)
+        return `lot_status introuvable pour id_lot=${id_lot}`;
+    if (!row.disponible_finis)
+        return `Lot ${id_lot} non disponible pour finis`;
+    if (row.current_step !== "pret_assemblage")
+        return `Lot ${id_lot} n'est pas au step pret_assemblage`;
+    if (activite && String(row.activity ?? "").trim() !== String(activite).trim()) {
+        return `Lot ${id_lot} appartient à l'activité ${row.activity ?? ""} (attendu: ${activite})`;
+    }
+    return null;
+};
 /**
  * GET /api/debutpreassemblage/pieces-disponibles?id_lot=2
  * -> nb_piece_conforme depuis fin_etching (id_lot unique)
@@ -152,6 +203,34 @@ const createDebutPreassemblage = async (req, res) => {
             seen.add(r.reference_nom);
             return true;
         });
+        // ✅ validation: les lots venant de lot_status doivent matcher l'activité choisie
+        // (on ne bloque pas les lots non-numériques, car certains champs peuvent être saisis manuellement)
+        for (const r of refsCreate) {
+            const reference_nom = s(r.reference_nom);
+            const lots = splitLots(s(r.lot_valeur));
+            for (const lotStr of lots) {
+                const id_lot = parseLotId(lotStr);
+                if (!id_lot)
+                    continue;
+                const errMsg = await ensureLotMatches({ activite, reference_nom, id_lot });
+                if (errMsg) {
+                    res.status(400).json({ error: errMsg });
+                    return;
+                }
+            }
+        }
+        // ✅ validation lot_corps (obligatoire)
+        {
+            const corpsRef = refsCreate.find((r) => s(r.reference_nom).startsWith("C"));
+            const corpsRefNom = corpsRef ? s(corpsRef.reference_nom) : "";
+            const errMsg = corpsRefNom
+                ? await ensureLotMatches({ activite, reference_nom: corpsRefNom, id_lot: lot_corps })
+                : await ensureLotMatchesSoft({ activite, id_lot: lot_corps });
+            if (errMsg) {
+                res.status(400).json({ error: `Lot corps invalide: ${errMsg}` });
+                return;
+            }
+        }
         const piecesInput = Array.isArray(req.body.pieces) ? req.body.pieces : [];
         const piecesCreate = piecesInput
             .map((p) => s(p))

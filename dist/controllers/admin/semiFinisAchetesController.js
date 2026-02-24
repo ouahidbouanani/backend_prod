@@ -17,14 +17,13 @@ const getSemiFinisAchetes = async (req, res, next) => {
 exports.getSemiFinisAchetes = getSemiFinisAchetes;
 const createSemiFiniAchete = async (req, res, next) => {
     try {
-        const { nom, quantite } = req.body;
+        const { nom } = req.body;
         if (!nom) {
             return res.status(400).json({ message: 'Le nom est obligatoire.' });
         }
         const item = await prisma.semiFiniAchete.create({
             data: {
                 nom,
-                quantite: typeof quantite === 'number' ? quantite : 0,
             },
         });
         res.status(201).json(item);

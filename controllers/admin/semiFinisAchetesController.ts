@@ -17,7 +17,7 @@ export const getSemiFinisAchetes = async (req: Request, res: Response, next: Nex
 
 export const createSemiFiniAchete = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { nom, quantite } = req.body;
+    const { nom } = req.body;
 
     if (!nom) {
       return res.status(400).json({ message: 'Le nom est obligatoire.' });
@@ -26,7 +26,6 @@ export const createSemiFiniAchete = async (req: Request, res: Response, next: Ne
     const item = await prisma.semiFiniAchete.create({
       data: {
         nom,
-        quantite: typeof quantite === 'number' ? quantite : 0,
       },
     });
 
