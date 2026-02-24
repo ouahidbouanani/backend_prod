@@ -1,8 +1,6 @@
 // src/controllers/semiFinisAchetesController.ts
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../../config/prisma';
 
 export const getSemiFinisAchetes = async (req: Request, res: Response, next: NextFunction) => {
   try {
