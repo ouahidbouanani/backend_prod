@@ -7,6 +7,7 @@ import prisma from '../../config/prisma';
 export const create = async (req: Request, res: Response): Promise<void> => {
     try {
         const {
+      activity, type_pieces,
             id_lot, nb_pieces, etage, date, heure_debut, operateur,
             num_machine, version, separation, commentaire
         } = req.body;
@@ -21,6 +22,15 @@ export const create = async (req: Request, res: Response): Promise<void> => {
                     operateur, num_machine, version, separation, commentaire
                 }
             });
+
+      // Compat Prisma Client: set new columns via SQL UPDATE
+      if (activity || type_pieces) {
+        await tx.$executeRaw`
+          UPDATE debut_tomo
+          SET activity = ${activity ?? null}, type_pieces = ${type_pieces ?? null}
+          WHERE id_lot = ${Number(id_lot)}
+        `;
+      }
 
             await tx.lot_status.update({
                 where: { id_lot },
@@ -46,48 +56,78 @@ export const getAll = async (req: Request, res: Response): Promise<void> => {
 };
 
 
+export const getActivities = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const rows = await prisma.$queryRaw<Array<{ activity: string | null }>>`
+      SELECT DISTINCT COALESCE(fe.activity, ls.activity) AS activity
+      FROM fin_etching fe
+      INNER JOIN lot_status ls ON ls.id_lot = fe.id_lot
+      LEFT JOIN debut_tomo dt ON dt.id_lot = fe.id_lot
+      WHERE dt.id_lot IS NULL
+        AND ls.disponible_finis = false
+        AND ls.type_piece NOT LIKE 'N%'
+        AND COALESCE(fe.activity, ls.activity) IS NOT NULL
+      ORDER BY activity ASC
+    `;
+
+    res.json(rows.map(r => r.activity).filter(Boolean));
+  } catch (err) {
+    console.error('Erreur lors de la récupération des activités:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+export const getTypePiecesOptions = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const activity = String(req.query.activity || '').trim();
+    if (!activity) {
+      res.status(400).json({ message: 'Le paramètre "activity" est requis.' });
+      return;
+    }
+
+    const rows = await prisma.$queryRaw<Array<{ type_pieces: string | null }>>`
+      SELECT DISTINCT COALESCE(fe.type_pieces, ls.type_piece) AS type_pieces
+      FROM fin_etching fe
+      INNER JOIN lot_status ls ON ls.id_lot = fe.id_lot
+      LEFT JOIN debut_tomo dt ON dt.id_lot = fe.id_lot
+      WHERE dt.id_lot IS NULL
+        AND ls.disponible_finis = false
+        AND ls.type_piece NOT LIKE 'N%'
+        AND COALESCE(fe.activity, ls.activity) = ${activity}
+        AND COALESCE(fe.type_pieces, ls.type_piece) IS NOT NULL
+      ORDER BY type_pieces ASC
+    `;
+
+    res.json(rows.map(r => r.type_pieces).filter(Boolean));
+  } catch (err) {
+    console.error('Erreur lors de la récupération des types de pièces:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+
 export const getLots = async (req: Request, res: Response): Promise<void> => {
   try {
-    // 1. Récupérer les lots déjà présents dans debut_tomo 
-    const lotsTomo = await prisma.debut_tomo.findMany({
-      select: { id_lot: true },
-    });
+    const activity = String(req.query.activity || '').trim();
+    const typePieces = String(req.query.type_pieces || '').trim();
 
-    const idsTomo = lotsTomo
-      .map(l => Number(l.id_lot))
-      .filter(n => !isNaN(n));
+    if (!activity || !typePieces) {
+      res.status(400).json({ message: 'Les paramètres "activity" et "type_pieces" sont requis.' });
+      return;
+    }
 
-    // 2. Récupérer les id_lot dans lot_status :
-    //    - disponible_finis = true
-    //    - type_piece ne commence PAS par "N" (pas des nozzles)
-    const lotsStatus = await prisma.lot_status.findMany({
-      where: {
-        disponible_finis: false,
-        NOT: {
-          type_piece: {
-            startsWith: 'N',
-          },
-        },
-      },
-      select: { id_lot: true },
-    });
-
-    const idsFromStatus = lotsStatus
-      .map(l => Number(l.id_lot))
-      .filter(n => !isNaN(n));
-
-    // 3. Récupérer les lots fin_etching :
-    //    - id_lot pas dans debut_tomo
-    //    - id_lot présent dans les ids filtrés de lot_status
-    const results = await prisma.fin_etching.findMany({
-      where: {
-        id_lot: {
-          notIn: idsTomo,
-          in: idsFromStatus,
-        },
-      },
-      select: { id_lot: true },
-    });
+    const results = await prisma.$queryRaw<Array<{ id_lot: number }>>`
+      SELECT DISTINCT fe.id_lot
+      FROM fin_etching fe
+      INNER JOIN lot_status ls ON ls.id_lot = fe.id_lot
+      LEFT JOIN debut_tomo dt ON dt.id_lot = fe.id_lot
+      WHERE dt.id_lot IS NULL
+        AND ls.disponible_finis = false
+        AND ls.type_piece NOT LIKE 'N%'
+        AND COALESCE(fe.activity, ls.activity) = ${activity}
+        AND COALESCE(fe.type_pieces, ls.type_piece) = ${typePieces}
+      ORDER BY fe.id_lot DESC
+    `;
 
     res.json(results);
   } catch (err) {

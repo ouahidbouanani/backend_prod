@@ -1,11 +1,63 @@
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 // ============================================
 // controllers/FormulairesSemi/debutEtchingController.js
 // ============================================
 import prisma from '../../config/prisma';
 
+export const getActivities = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Distinct activities from fin_impression, fallback to lot_status for older rows
+    const rows = await prisma.$queryRaw<{ activity: string | null }[]>(Prisma.sql`
+      SELECT DISTINCT COALESCE(fi.activity, ls.activity) AS activity
+      FROM fin_impression fi
+      LEFT JOIN lot_status ls ON ls.id_lot = fi.id_lot
+      WHERE COALESCE(fi.activity, ls.activity) IS NOT NULL
+      ORDER BY activity ASC
+    `);
+
+    res.json(rows.map(r => r.activity).filter((v): v is string => Boolean(v)));
+  } catch (err) {
+    console.error('Erreur lors du chargement des activités:', err);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+};
+
+export const getTypePiecesOptions = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const activity = typeof req.query.activity === 'string' ? req.query.activity : '';
+    if (!activity) {
+      res.status(400).json({ success: false, message: 'Le paramètre activity est requis.' });
+      return;
+    }
+
+    // Distinct type_pieces from fin_impression, fallback to lot_status.type_piece for older rows
+    const rows = await prisma.$queryRaw<{ type_pieces: string | null }[]>(Prisma.sql`
+      SELECT DISTINCT COALESCE(fi.type_pieces, ls.type_piece) AS type_pieces
+      FROM fin_impression fi
+      LEFT JOIN lot_status ls ON ls.id_lot = fi.id_lot
+      WHERE COALESCE(fi.activity, ls.activity) = ${activity}
+        AND COALESCE(fi.type_pieces, ls.type_piece) IS NOT NULL
+      ORDER BY type_pieces ASC
+    `);
+
+    res.json(rows.map(r => r.type_pieces).filter((v): v is string => Boolean(v)));
+  } catch (err) {
+    console.error('Erreur lors du chargement des types:', err);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+};
+
 export const getLots = async (req: Request, res: Response): Promise<void> => {
   try {
+    const activity = typeof req.query.activity === 'string' ? req.query.activity : '';
+    const type_pieces = typeof req.query.type_pieces === 'string' ? req.query.type_pieces : '';
+
+    if (!activity || !type_pieces) {
+      res.status(400).json({ success: false, message: 'Les paramètres activity et type_pieces sont requis.' });
+      return;
+    }
+
     // 1. Récupérer tous les id_lot présents dans fin_etching
     const etchingLots = await prisma.fin_etching.findMany({
       select: { id_lot: true }
@@ -14,35 +66,27 @@ export const getLots = async (req: Request, res: Response): Promise<void> => {
     // 2. Extraire les id dans un tableau
     const idsEtching = etchingLots.map(item => item.id_lot);
 
-    // 3. Récupérer les lots dans fin_impression dont id_lot n'est PAS dans fin_etching
-    const results = await prisma.fin_impression.findMany({
-      where: {
-        id_lot: {
-          notIn: idsEtching   // exclure les lots déjà dans fin_etching
-        }
-      },
-      select: {
-        id_lot: true,
-        num_lot_wafer: true,
-        nb_imprimees: true
-      }
-    });
+    // 3. Récupérer les lots dans fin_impression (filtrés activity/type_pieces)
+    //    dont id_lot n'est PAS dans fin_etching
+    //    Fallback: si fi.activity/fi.type_pieces est NULL, utiliser lot_status.
+    const baseQuery = Prisma.sql`
+      SELECT
+        fi.id_lot,
+        fi.num_lot_wafer,
+        fi.nb_imprimees,
+        COALESCE(fi.activity, ls.activity) AS activity,
+        COALESCE(fi.type_pieces, ls.type_piece) AS type_pieces
+      FROM fin_impression fi
+      LEFT JOIN lot_status ls ON ls.id_lot = fi.id_lot
+      WHERE COALESCE(fi.activity, ls.activity) = ${activity}
+        AND COALESCE(fi.type_pieces, ls.type_piece) = ${type_pieces}
+    `;
 
-    // `fin_impression` ne contient pas `type_pieces` dans le schéma Prisma.
-    // On le récupère depuis `lot_status.type_piece` et on renvoie la clé attendue `type_pieces`.
-    const lotIds = results.map(item => item.id_lot);
-    const lotStatuses = await prisma.lot_status.findMany({
-      where: { id_lot: { in: lotIds } },
-      select: { id_lot: true, type_piece: true }
-    });
+    const results = idsEtching.length > 0
+      ? await prisma.$queryRaw<any[]>(Prisma.sql`${baseQuery} AND fi.id_lot NOT IN (${Prisma.join(idsEtching)})`)
+      : await prisma.$queryRaw<any[]>(baseQuery);
 
-    const typeByLotId = new Map(lotStatuses.map(ls => [ls.id_lot, ls.type_piece] as const));
-    const enriched = results.map(r => ({
-      ...r,
-      type_pieces: typeByLotId.get(r.id_lot) ?? null
-    }));
-
-    res.status(200).json(enriched);
+    res.status(200).json(results);
 
   } catch (err) {
     console.error('Erreur lors de la récupération des lots:', err);
@@ -54,7 +98,7 @@ export const getLots = async (req: Request, res: Response): Promise<void> => {
 export const addDebutEtching = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
-      numeroLot, num_lot_wafer, nb_pieces, type_pieces, operateur, nb_passage,
+      numeroLot, activity, type_pieces, num_lot_wafer, nb_pieces, operateur, nb_passage,
       date_debut, heure_debut, temps_reel, koh, bain, position, commentaire
     } = req.body;
 
@@ -75,6 +119,17 @@ export const addDebutEtching = async (req: Request, res: Response): Promise<void
           commentaire
         }
       });
+
+      // Renseigner activity/type_pieces via SQL pour rester compatible
+      // même si Prisma Client n'a pas encore été régénéré.
+      if (activity || type_pieces) {
+        await tx.$executeRaw`
+          UPDATE debut_etching
+          SET activity = ${activity ?? null},
+              type_pieces = ${type_pieces ?? null}
+          WHERE id_lot = ${numeroLot} AND nb_passage = ${nb_passage}
+        `;
+      }
 
       await tx.lot_status.update({
         where: { id_lot: numeroLot },

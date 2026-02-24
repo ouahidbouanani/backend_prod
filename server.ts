@@ -33,6 +33,8 @@ import finPreassemblageRoutes from "./routes/FromsFinisRoutes/FinPreAssemblageRo
 import debutAssemblage from "./routes/FromsFinisRoutes/AssemeblageRoute";
 import debutAssemblageRoutes from "./routes/FromsFinisRoutes/DebutAssemblageRoutes";
 import finAssemblageRoutes from "./routes/FromsFinisRoutes/FinAssemblageRoutes";
+import debutHydroFinisRoutes from "./routes/FromsFinisRoutes/DebutHydroRoutes";
+import finHydroFinisRoutes from "./routes/FromsFinisRoutes/FinHydroRoutes";
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
@@ -95,6 +97,8 @@ app.use("/api/finpreassemblage", finPreassemblageRoutes);
 app.use("/api/debut-assemblage", debutAssemblage);
 app.use("/api/debutassemblage", debutAssemblageRoutes);
 app.use("/api/finassemblage", finAssemblageRoutes);
+app.use("/api/debut-hydro-finis", debutHydroFinisRoutes);
+app.use("/api/fin-hydro-finis", finHydroFinisRoutes);
 
 const server = app.listen(PORT, () => {
   console.log(`✅ Serveur démarré sur le port ${PORT}`);

@@ -3,26 +3,92 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addFinEtching = exports.getLotInfo = exports.getLots = void 0;
+exports.addFinEtching = exports.getLotInfo = exports.getLots = exports.getTypePiecesOptions = exports.getActivities = void 0;
 // ============================================
 // controllers/FormulairesSemi/finEtchingController.js
 // ============================================
+const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../config/prisma"));
+const getActivities = async (req, res) => {
+    try {
+        const lotsFinis = await prisma_1.default.fin_etching.findMany({
+            select: { id_lot: true }
+        });
+        const idsFinis = lotsFinis.map(l => l.id_lot);
+        const base = client_1.Prisma.sql `
+            SELECT DISTINCT COALESCE(de.activity, ls.activity) AS activity
+            FROM prise_de_cotes pc
+            LEFT JOIN debut_etching de ON de.id_lot = pc.id_lot
+            LEFT JOIN lot_status ls ON ls.id_lot = pc.id_lot
+            WHERE COALESCE(de.activity, ls.activity) IS NOT NULL
+        `;
+        const rows = idsFinis.length > 0
+            ? await prisma_1.default.$queryRaw(client_1.Prisma.sql `${base} AND pc.id_lot NOT IN (${client_1.Prisma.join(idsFinis)}) ORDER BY activity ASC`)
+            : await prisma_1.default.$queryRaw(client_1.Prisma.sql `${base} ORDER BY activity ASC`);
+        res.json(rows.map(r => r.activity).filter((v) => Boolean(v)));
+    }
+    catch (err) {
+        console.error('Erreur lors de la récupération des activités:', err);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+};
+exports.getActivities = getActivities;
+const getTypePiecesOptions = async (req, res) => {
+    try {
+        const activity = typeof req.query.activity === 'string' ? req.query.activity : '';
+        if (!activity) {
+            res.status(400).json({ success: false, message: 'Le paramètre activity est requis.' });
+            return;
+        }
+        const lotsFinis = await prisma_1.default.fin_etching.findMany({
+            select: { id_lot: true }
+        });
+        const idsFinis = lotsFinis.map(l => l.id_lot);
+        const base = client_1.Prisma.sql `
+            SELECT DISTINCT COALESCE(de.type_pieces, ls.type_piece) AS type_pieces
+            FROM prise_de_cotes pc
+            LEFT JOIN debut_etching de ON de.id_lot = pc.id_lot
+            LEFT JOIN lot_status ls ON ls.id_lot = pc.id_lot
+            WHERE COALESCE(de.activity, ls.activity) = ${activity}
+              AND COALESCE(de.type_pieces, ls.type_piece) IS NOT NULL
+        `;
+        const rows = idsFinis.length > 0
+            ? await prisma_1.default.$queryRaw(client_1.Prisma.sql `${base} AND pc.id_lot NOT IN (${client_1.Prisma.join(idsFinis)}) ORDER BY type_pieces ASC`)
+            : await prisma_1.default.$queryRaw(client_1.Prisma.sql `${base} ORDER BY type_pieces ASC`);
+        res.json(rows.map(r => r.type_pieces).filter((v) => Boolean(v)));
+    }
+    catch (err) {
+        console.error('Erreur lors de la récupération des types:', err);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+};
+exports.getTypePiecesOptions = getTypePiecesOptions;
 const getLots = async (req, res) => {
     try {
+        const activity = typeof req.query.activity === 'string' ? req.query.activity : '';
+        const type_pieces = typeof req.query.type_pieces === 'string' ? req.query.type_pieces : '';
+        if (!activity || !type_pieces) {
+            res.status(400).json({ success: false, message: 'Les paramètres activity et type_pieces sont requis.' });
+            return;
+        }
         // 1. Récupérer tous les lots finis (à exclure)
         const lotsFinis = await prisma_1.default.fin_etching.findMany({
             select: { id_lot: true }
         });
         const idsFinis = lotsFinis.map(l => l.id_lot);
-        // 2. Récupérer tous les lots ayant AU MOINS une prise_de_cotes
-        const lotsAvecPrises = await prisma_1.default.prise_de_cotes.findMany({
-            select: { id_lot: true },
-            distinct: ['id_lot'] // évite les doublons
-        });
-        // 3. Filtrer côté JS les lots NON présents dans fin_etching
-        const results = lotsAvecPrises
-            .filter(lot => !idsFinis.includes(lot.id_lot));
+        // 2. Lots ayant AU MOINS une prise_de_cotes, filtrés par activity/type_pieces
+        //    Fallback: debut_etching / lot_status
+        const base = client_1.Prisma.sql `
+            SELECT DISTINCT pc.id_lot
+            FROM prise_de_cotes pc
+            LEFT JOIN debut_etching de ON de.id_lot = pc.id_lot
+            LEFT JOIN lot_status ls ON ls.id_lot = pc.id_lot
+            WHERE COALESCE(de.activity, ls.activity) = ${activity}
+              AND COALESCE(de.type_pieces, ls.type_piece) = ${type_pieces}
+        `;
+        const results = idsFinis.length > 0
+            ? await prisma_1.default.$queryRaw(client_1.Prisma.sql `${base} AND pc.id_lot NOT IN (${client_1.Prisma.join(idsFinis)}) ORDER BY pc.id_lot ASC`)
+            : await prisma_1.default.$queryRaw(client_1.Prisma.sql `${base} ORDER BY pc.id_lot ASC`);
         res.json(results);
     }
     catch (err) {
@@ -52,7 +118,7 @@ const getLotInfo = async (req, res) => {
 exports.getLotInfo = getLotInfo;
 const addFinEtching = async (req, res) => {
     try {
-        const { id_lot, num_lot_wafer, nb_passage, date_fin, heure_fin, nb_piece_conforme, operateur, commentaire } = req.body;
+        const { id_lot, activity, type_pieces, num_lot_wafer, nb_passage, date_fin, heure_fin, nb_piece_conforme, operateur, commentaire } = req.body;
         await prisma_1.default.$transaction(async (tx) => {
             await tx.fin_etching.create({
                 data: {
@@ -61,6 +127,16 @@ const addFinEtching = async (req, res) => {
                     nb_piece_conforme, operateur, commentaire
                 }
             });
+            // Renseigner activity/type_pieces via SQL pour rester compatible
+            // même si Prisma Client n'a pas encore été régénéré.
+            if (activity || type_pieces) {
+                await tx.$executeRaw `
+                  UPDATE fin_etching
+                  SET activity = ${activity ?? null},
+                      type_pieces = ${type_pieces ?? null}
+                  WHERE id_lot = ${id_lot}
+                `;
+            }
             // On récupère le lot_status existant
             const lotStatus = await tx.lot_status.findUnique({
                 where: { id_lot },

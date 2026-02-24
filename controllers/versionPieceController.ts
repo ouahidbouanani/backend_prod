@@ -35,15 +35,16 @@ export const deleteVersion = async (req: Request, res: Response): Promise<Respon
     try {
         const version = req.params.version;
 
-        const result = await prisma.version_piece.delete({
+        const result = await prisma.version_piece.deleteMany({
             where: { version }
         });
 
-        res.status(200).json({ message: 'Version supprimée' });
-    } catch (err) {
-        if (err.code === 'P2025') {
+        if (!result.count) {
             return res.status(404).json({ error: 'Version non trouvée' });
         }
+
+        res.status(200).json({ message: 'Version supprimée', deleted: result.count });
+    } catch (err) {
         console.error('Erreur suppression version :', err);
         res.status(500).json({ error: 'Erreur serveur' });
     }

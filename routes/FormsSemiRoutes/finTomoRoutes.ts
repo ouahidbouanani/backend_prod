@@ -36,6 +36,17 @@ router.get('/all', finTomoController.getAll)
 
 
 /**
+ * /api/fin-tomo/options/activities:
+ */
+router.get('/options/activities', finTomoController.getActivities);
+
+/**
+ * /api/fin-tomo/options/type-pieces:
+ */
+router.get('/options/type-pieces', finTomoController.getTypePiecesOptions);
+
+
+/**
  * @openapi
  * /api/fin-tomo/lots:
  *   get:

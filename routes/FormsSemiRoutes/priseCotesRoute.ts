@@ -3,6 +3,9 @@ import express from 'express'
 const router = express.Router()
 import * as piecesController from '../../controllers/FormulairesSemi/priseCotesController'
 
+router.get('/lots/options/activities', piecesController.getActivities)
+router.get('/lots/options/type-pieces', piecesController.getTypePiecesOptions)
+
 router.get('/lots', piecesController.getLots)
 router.post('/pieces/submit', piecesController.submitPieces)
 router.post('/pieces/ajouter', piecesController.ajouterPriseCotes)

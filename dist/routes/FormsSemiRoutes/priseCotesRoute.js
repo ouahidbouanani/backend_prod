@@ -39,6 +39,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const router = express_1.default.Router();
 const piecesController = __importStar(require("../../controllers/FormulairesSemi/priseCotesController"));
+router.get('/lots/options/activities', piecesController.getActivities);
+router.get('/lots/options/type-pieces', piecesController.getTypePiecesOptions);
 router.get('/lots', piecesController.getLots);
 router.post('/pieces/submit', piecesController.submitPieces);
 router.post('/pieces/ajouter', piecesController.ajouterPriseCotes);

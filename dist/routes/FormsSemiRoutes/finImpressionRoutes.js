@@ -41,6 +41,9 @@ const router = express_1.default.Router();
 const controller = __importStar(require("../../controllers/FormulairesSemi/finImpressionController"));
 // Ajouter une nouvelle fin d'impression
 router.post('/', controller.dbInsertFinImpression);
+// Options (activité -> types de pièces)
+router.get('/options/activities', controller.getActivities);
+router.get('/options/type-pieces', controller.getTypePiecesOptions);
 // Obtenir tous les lots
 router.get('/lots', controller.getAllLots);
 // Obtenir les détails d’un lot

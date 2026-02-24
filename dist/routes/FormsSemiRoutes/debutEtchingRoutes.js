@@ -40,6 +40,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const router = express_1.default.Router();
 const controller = __importStar(require("../../controllers/FormulairesSemi/debutEtchingController"));
+// Options (activité -> types de pièces)
+router.get('/options/activities', controller.getActivities);
+router.get('/options/type-pieces', controller.getTypePiecesOptions);
 // Récupérer les lots depuis la table fin_impression
 router.get('/lots', controller.getLots);
 // Ajouter un nouvel enregistrement dans debut_etching

@@ -43,6 +43,9 @@ const debutTomoController = __importStar(require("../../controllers/FormulairesS
 router.post('/', debutTomoController.create);
 // Récupérer tous les débuts tomographie (optionnel)
 router.get('/', debutTomoController.getAll);
+// Options: activités / types de pièces
+router.get('/options/activities', debutTomoController.getActivities);
+router.get('/options/type-pieces', debutTomoController.getTypePiecesOptions);
 // Obtenir tous les lots disponibles depuis la table debut_etching
 router.get('/lots', debutTomoController.getLots);
 exports.default = router;

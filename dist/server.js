@@ -37,6 +37,8 @@ const FinPreAssemblageRoutes_1 = __importDefault(require("./routes/FromsFinisRou
 const AssemeblageRoute_2 = __importDefault(require("./routes/FromsFinisRoutes/AssemeblageRoute"));
 const DebutAssemblageRoutes_1 = __importDefault(require("./routes/FromsFinisRoutes/DebutAssemblageRoutes"));
 const FinAssemblageRoutes_1 = __importDefault(require("./routes/FromsFinisRoutes/FinAssemblageRoutes"));
+const DebutHydroRoutes_1 = __importDefault(require("./routes/FromsFinisRoutes/DebutHydroRoutes"));
+const FinHydroRoutes_1 = __importDefault(require("./routes/FromsFinisRoutes/FinHydroRoutes"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
 const swaggerSpec = (0, swagger_1.createOpenApiSpec)({
@@ -93,6 +95,8 @@ app.use("/api/finpreassemblage", FinPreAssemblageRoutes_1.default);
 app.use("/api/debut-assemblage", AssemeblageRoute_2.default);
 app.use("/api/debutassemblage", DebutAssemblageRoutes_1.default);
 app.use("/api/finassemblage", FinAssemblageRoutes_1.default);
+app.use("/api/debut-hydro-finis", DebutHydroRoutes_1.default);
+app.use("/api/fin-hydro-finis", FinHydroRoutes_1.default);
 const server = app.listen(PORT, () => {
     console.log(`✅ Serveur démarré sur le port ${PORT}`);
     console.log(`🔗 http://localhost:${PORT}`);

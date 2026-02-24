@@ -41,6 +41,9 @@ const router = express_1.default.Router();
 const finEtchingController = __importStar(require("../../controllers/FormulairesSemi/finEtchingController"));
 // Obtenir tous les lots disponibles depuis la table debut_etching
 router.get('/lots', finEtchingController.getLots);
+// Options (activité -> types de pièces)
+router.get('/options/activities', finEtchingController.getActivities);
+router.get('/options/type-pieces', finEtchingController.getTypePiecesOptions);
 // Obtenir les données (wafer + dernier passage) pour un lot donné
 router.get('/lot-info/:lotId', finEtchingController.getLotInfo);
 // Ajouter un enregistrement de fin etching
