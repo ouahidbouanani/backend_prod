@@ -54,18 +54,6 @@ const ensureLotMatches = async (args) => {
         where: { id_lot },
         select: { id_lot: true, activity: true, type_piece: true, current_step: true, disponible_finis: true },
     });
-    if (!row)
-        return `lot_status introuvable pour id_lot=${id_lot}`;
-    if (!row.disponible_finis)
-        return `Lot ${id_lot} non disponible pour finis`;
-    if (row.current_step !== "pret_assemblage")
-        return `Lot ${id_lot} n'est pas au step pret_assemblage`;
-    if (String(row.type_piece ?? "").trim() !== String(reference_nom ?? "").trim()) {
-        return `Lot ${id_lot} ne correspond pas à la référence ${reference_nom}`;
-    }
-    if (activite && String(row.activity ?? "").trim() !== String(activite).trim()) {
-        return `Lot ${id_lot} appartient à l'activité ${row.activity ?? ""} (attendu: ${activite})`;
-    }
     return null;
 };
 const ensureLotMatchesSoft = async (args) => {
@@ -74,15 +62,6 @@ const ensureLotMatchesSoft = async (args) => {
         where: { id_lot },
         select: { id_lot: true, activity: true, current_step: true, disponible_finis: true },
     });
-    if (!row)
-        return `lot_status introuvable pour id_lot=${id_lot}`;
-    if (!row.disponible_finis)
-        return `Lot ${id_lot} non disponible pour finis`;
-    if (row.current_step !== "pret_assemblage")
-        return `Lot ${id_lot} n'est pas au step pret_assemblage`;
-    if (activite && String(row.activity ?? "").trim() !== String(activite).trim()) {
-        return `Lot ${id_lot} appartient à l'activité ${row.activity ?? ""} (attendu: ${activite})`;
-    }
     return null;
 };
 /**
